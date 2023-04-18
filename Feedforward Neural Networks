@@ -1,1 +1,37 @@
+# A feedforward neural network (FFNN) is a type of artificial neural network (ANN) in which the flow of information moves in one direction, from the input layer to the output layer, without any feedback loops or cycles.
 
+# In a feedforward neural network, the input data is fed into the input layer, which passes the information to the hidden layers, and finally to the output layer, where the prediction is made. Each layer consists of a set of nodes or neurons that perform a linear or nonlinear transformation on the input data. The weights and biases associated with each node in the network are learned through a process called training, which involves adjusting the values of these parameters to minimize the error between the predicted output and the actual output.
+
+# The architecture of a feedforward neural network can vary, depending on the specific task it is designed to perform. It may have multiple hidden layers, each with a different number of nodes, and may use various activation functions to introduce nonlinearity into the model. The most commonly used activation functions include sigmoid, ReLU (rectified linear unit), and tanh (hyperbolic tangent).
+
+# Feedforward neural networks are commonly used in a wide range of applications, including image and speech recognition, natural language processing, and predictive modeling.
+
+# Here's a code sample of a simple feedforward neural network using Python and the Keras deep learning library:
+import numpy as np
+from keras.models import Sequential
+from keras.layers import Dense
+
+# Define the input data
+X_train = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+y_train = np.array([[0], [1], [1], [0]])
+
+# Define the architecture of the neural network
+model = Sequential()
+model.add(Dense(2, input_dim=2, activation='sigmoid'))
+model.add(Dense(1, activation='sigmoid'))
+
+# Compile the model with the optimizer, loss function, and metrics
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+# Train the model with the input data
+model.fit(X_train, y_train, epochs=1000)
+
+# Predict the output for new input data
+X_test = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+y_pred = model.predict(X_test)
+
+print(y_pred)
+
+# This code defines a simple feedforward neural network with an input layer, a hidden layer with 2 nodes, and an output layer with 1 node. The activation function used in the hidden layer is sigmoid, while the output layer uses a sigmoid activation function for binary classification. The model is trained using the Adam optimizer and binary crossentropy loss function, with accuracy as the evaluation metric.
+
+# The input data consists of 4 examples with 2 features each, while the output data is binary. The model is trained for 1000 epochs on this data. Finally, the model is used to predict the output for new input data, which is also a 4x2 array. The predicted output is printed to the console.

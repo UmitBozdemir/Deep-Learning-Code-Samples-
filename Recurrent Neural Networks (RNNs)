@@ -1,0 +1,64 @@
+# Recurrent Neural Networks (RNNs) are a type of neural network architecture commonly used in deep learning for modeling sequential data such as time series or natural language text. Unlike traditional feedforward neural networks, RNNs have feedback connections that allow information to be passed from one time step to the next. This allows them to capture temporal dependencies and perform well on tasks where the order of input data is important.
+
+# At each time step, an RNN takes an input vector and a hidden state vector as input and produces an output vector and a new hidden state vector as output. The hidden state vector is updated based on the input and the previous hidden state, allowing the network to maintain a memory of previous inputs. The output vector can be used for a variety of tasks such as predicting the next item in a sequence or classifying the entire sequence.
+
+# There are several variants of RNNs such as Long Short-Term Memory (LSTM) and Gated Recurrent Unit (GRU) which address the vanishing gradient problem and allow RNNs to better capture long-term dependencies in the data.
+
+# Here is an example code for implementing a basic Recurrent Neural Network (RNN) using PyTorch in Python:
+import torch
+import torch.nn as nn
+
+class RNN(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size):
+        super(RNN, self).__init__()
+        self.hidden_size = hidden_size
+        self.rnn = nn.RNN(input_size, hidden_size, batch_first=True)
+        self.fc = nn.Linear(hidden_size, output_size)
+
+    def forward(self, x, hidden):
+        out, hidden = self.rnn(x, hidden)
+        out = self.fc(out[:, -1, :])
+        return out, hidden
+
+input_size = 10
+hidden_size = 20
+output_size = 5
+
+model = RNN(input_size, hidden_size, output_size)
+
+# Define loss function and optimizer
+criterion = nn.MSELoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+
+# Generate some dummy data
+batch_size = 16
+seq_len = 20
+input_data = torch.randn(batch_size, seq_len, input_size)
+target_data = torch.randn(batch_size, output_size)
+
+# Train the model
+num_epochs = 100
+for epoch in range(num_epochs):
+    # Zero the gradients
+    optimizer.zero_grad()
+    
+    # Initialize hidden state
+    hidden = torch.zeros(1, batch_size, hidden_size)
+    
+    # Forward pass
+    output, hidden = model(input_data, hidden)
+    
+    # Compute loss
+    loss = criterion(output, target_data)
+    
+    # Backward pass and update weights
+    loss.backward()
+    optimizer.step()
+    
+    # Print progress
+    if (epoch+1) % 10 == 0:
+        print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}')
+
+# In this code, we define an RNN model using the PyTorch nn.RNN module. The forward function takes an input tensor x and a hidden state tensor hidden, and returns an output tensor and an updated hidden state tensor. We also define a loss function (nn.MSELoss) and an optimizer (torch.optim.Adam), and generate some dummy data for training.
+
+# In the training loop, we initialize the hidden state to zeros, perform a forward pass, compute the loss, perform a backward pass, and update the weights. We print the loss every 10 epochs to monitor progress.

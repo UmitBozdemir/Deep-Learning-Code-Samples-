@@ -1,0 +1,81 @@
+# Variational Autoencoder (VAE) is a type of generative model in deep learning that is used for unsupervised learning of complex data distributions.
+
+# The basic idea behind a VAE is to encode input data into a lower-dimensional representation (latent space) using an encoder neural network, and then decode it back to the original data using a decoder neural network. However, unlike traditional autoencoders, VAEs impose a probabilistic constraint on the latent space, such that the encoder maps the input data to a probability distribution rather than a deterministic encoding.
+
+# The probabilistic constraint in VAEs is implemented through the use of a variational inference framework, which involves training the network to minimize the difference between the true distribution of the data and an approximation of that distribution obtained from the latent variables.
+
+# In essence, VAEs are trained to maximize the evidence lower bound (ELBO) objective function, which consists of a reconstruction loss that measures the difference between the original and reconstructed data, and a regularization term that encourages the latent variables to follow a desired probability distribution, typically a Gaussian distribution.
+
+# Once trained, VAEs can be used to generate new data by sampling from the learned latent space, allowing them to be used for tasks such as data compression, anomaly detection, and image synthesis. 
+
+# Here's a basic code sample of a Variational Autoencoder implemented in TensorFlow:
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+
+class VAE(keras.Model):
+    def __init__(self, latent_dim):
+        super(VAE, self).__init__()
+        self.latent_dim = latent_dim
+        self.encoder = keras.Sequential([
+            layers.Input(shape=(28, 28, 1)),
+            layers.Conv2D(filters=32, kernel_size=3, strides=(2, 2), activation='relu'),
+            layers.Conv2D(filters=64, kernel_size=3, strides=(2, 2), activation='relu'),
+            layers.Flatten(),
+            layers.Dense(latent_dim + latent_dim),
+        ])
+        self.decoder = keras.Sequential([
+            layers.Input(shape=(latent_dim,)),
+            layers.Dense(units=7*7*32, activation=tf.nn.relu),
+            layers.Reshape(target_shape=(7, 7, 32)),
+            layers.Conv2DTranspose(filters=64, kernel_size=3, strides=(2, 2), padding='same', activation='relu'),
+            layers.Conv2DTranspose(filters=32, kernel_size=3, strides=(2, 2), padding='same', activation='relu'),
+            layers.Conv2DTranspose(filters=1, kernel_size=3, strides=(1, 1), padding='same'),
+        ])
+    
+    def encode(self, x):
+        mean, logvar = tf.split(self.encoder(x), num_or_size_splits=2, axis=1)
+        return mean, logvar
+    
+    def reparameterize(self, mean, logvar):
+        eps = tf.random.normal(shape=mean.shape)
+        return eps * tf.exp(logvar * 0.5) + mean
+    
+    def decode(self, z):
+        return self.decoder(z)
+    
+    def call(self, x):
+        mean, logvar = self.encode(x)
+        z = self.reparameterize(mean, logvar)
+        x_recon = self.decode(z)
+        return x_recon, mean, logvar
+    
+    def compute_loss(self, x):
+        x_recon, mean, logvar = self(x)
+        recon_loss = tf.reduce_mean(tf.square(x - x_recon))
+        kl_loss = -0.5 * tf.reduce_mean(1 + logvar - tf.square(mean) - tf.exp(logvar))
+        return recon_loss + kl_loss
+
+    def train_step(self, x):
+        with tf.GradientTape() as tape:
+            loss = self.compute_loss(x)
+        gradients = tape.gradient(loss, self.trainable_variables)
+        self.optimizer.apply_gradients(zip(gradients, self.trainable_variables))
+        return {'loss': loss}
+
+# Instantiate the VAE model with latent dimension of 2
+vae = VAE(latent_dim=2)
+
+# Compile the model
+vae.compile(optimizer=keras.optimizers.Adam())
+
+# Train the model on MNIST dataset
+mnist = keras.datasets.mnist
+(x_train, _), (x_test, _) = mnist.load_data()
+x_train = x_train.astype('float32') / 255.
+x_test = x_test.astype('float32') / 255.
+x_train = x_train.reshape((len(x_train), 28, 28, 1))
+x_test = x_test.reshape((len(x_test), 28, 28, 1))
+vae.fit(x_train, epochs=10, batch_size=32, validation_data=(x_test, None))
+
+# This code defines a VAE model with an encoder and a decoder implemented using convolutional and dense layers in TensorFlow. It also includes the functions to encode, decode, and reparameterize the data. 

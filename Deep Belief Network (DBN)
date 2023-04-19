@@ -1,0 +1,40 @@
+# A Deep Belief Network (DBN) is a type of artificial neural network (ANN) that is composed of multiple layers of interconnected units or nodes. DBNs are typically composed of two or more restricted Boltzmann machines (RBMs), which are themselves a type of neural network that use a probabilistic approach to model data.
+
+# The DBN is a generative model that can learn to represent complex data distributions in an unsupervised manner, meaning that it can learn patterns and features in the data without being explicitly told what those features are. This is achieved through a process called layer-wise pretraining, in which each layer of the DBN is trained separately as an RBM, before being fine-tuned as part of the complete network.
+
+# Once the DBN is fully trained, it can be used for a variety of tasks, such as classification, regression, or generation of new samples from the learned distribution. DBNs have been applied successfully in many areas, including image and speech recognition, natural language processing, and bioinformatics.
+
+# Here is a code sample for a Deep Belief Network using Python and the Keras library:
+from keras.layers import Input, Dense
+from keras.models import Model
+from keras.layers.advanced_activations import PReLU
+from keras.optimizers import Adam
+
+# Define input layer
+input_layer = Input(shape=(input_size,))
+
+# Define hidden layers
+hidden_layer_1 = Dense(500)(input_layer)
+activation_1 = PReLU()(hidden_layer_1)
+
+hidden_layer_2 = Dense(500)(activation_1)
+activation_2 = PReLU()(hidden_layer_2)
+
+hidden_layer_3 = Dense(2000)(activation_2)
+activation_3 = PReLU()(hidden_layer_3)
+
+# Define output layer
+output_layer = Dense(output_size, activation='softmax')(activation_3)
+
+# Define model
+model = Model(inputs=[input_layer], outputs=[output_layer])
+
+# Compile model
+model.compile(optimizer=Adam(lr=learning_rate), loss='categorical_crossentropy')
+
+# Train model
+model.fit(x_train, y_train, batch_size=batch_size, epochs=num_epochs, validation_data=(x_test, y_test))
+
+# This code defines a Deep Belief Network with three hidden layers, each with a different number of neurons. The activation function used is the Parametric Rectified Linear Unit (PReLU), which has been shown to improve performance in deep neural networks. The output layer uses the softmax activation function for classification tasks.
+
+# The model is compiled using the Adam optimizer and the categorical cross-entropy loss function. Finally, the model is trained on the input data (x_train) and labels (y_train) using a specified batch size and number of epochs, and validated on a separate validation set (x_test, y_test).

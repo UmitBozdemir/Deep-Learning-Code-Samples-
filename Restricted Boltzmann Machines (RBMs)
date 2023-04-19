@@ -1,0 +1,70 @@
+# A Restricted Boltzmann Machine (RBM) is a generative stochastic artificial neural network that can learn a probability distribution over its input data. It is a type of neural network that is widely used in unsupervised learning tasks, such as dimensionality reduction, feature learning, and collaborative filtering.
+
+# RBM is a type of neural network that has a layer of visible units and a layer of hidden units. The visible units represent the input data, while the hidden units capture the high-level features or patterns in the data. The RBM is trained to learn the joint probability distribution of the input and hidden units using a process called contrastive divergence.
+
+# During training, the RBM learns to reconstruct the input data by adjusting the weights between the visible and hidden units. The RBM is trained using a method called unsupervised learning, where the network learns from the input data without any explicit labels or targets.
+
+# Once trained, the RBM can be used for a variety of tasks, such as generating new data samples, performing feature extraction for downstream tasks, or performing collaborative filtering for recommendation systems.
+
+# Here is an example code implementation of a Restricted Boltzmann Machine using the PyTorch deep learning framework:
+import torch
+import torch.nn as nn
+
+class RBM(nn.Module):
+    def __init__(self, n_visible, n_hidden):
+        super(RBM, self).__init__()
+        self.W = nn.Parameter(torch.randn(n_hidden, n_visible))
+        self.bv = nn.Parameter(torch.zeros(n_visible))
+        self.bh = nn.Parameter(torch.zeros(n_hidden))
+
+    def sample_hidden(self, v):
+        p_h_given_v = torch.sigmoid(torch.matmul(v, self.W.t()) + self.bh)
+        return torch.bernoulli(p_h_given_v)
+
+    def sample_visible(self, h):
+        p_v_given_h = torch.sigmoid(torch.matmul(h, self.W) + self.bv)
+        return torch.bernoulli(p_v_given_h)
+
+    def forward(self, v):
+        h_0 = self.sample_hidden(v)
+        v_0 = self.sample_visible(h_0)
+        h_1 = self.sample_hidden(v_0)
+        return v_0, h_0, h_1
+
+    def free_energy(self, v):
+        vbias_term = torch.matmul(v, self.bv)
+        hidden_term = torch.sum(torch.log(1 + torch.exp(torch.matmul(v, self.W.t()) + self.bh)), dim=1)
+        return -hidden_term - vbias_term
+
+    def contrastive_divergence(self, v, k=1):
+        v_t = v.clone().detach()
+        h_t = self.sample_hidden(v_t)
+        for _ in range(k):
+            v_t, h_t, _ = self.forward(v_t)
+        return v, v_t, h_t
+
+    def update(self, v_pos, v_neg, lr=0.1, weight_decay=0.0001, momentum=0.5):
+        pos_hidden = self.sample_hidden(v_pos)
+        neg_hidden = self.sample_hidden(v_neg)
+
+        pos_associations = torch.matmul(v_pos.t(), pos_hidden)
+        neg_associations = torch.matmul(v_neg.t(), neg_hidden)
+
+        weight_decay_term = weight_decay * self.W
+        momentum_term = momentum * (self.W - self.prev_W) if hasattr(self, 'prev_W') else 0
+        self.prev_W = self.W.clone().detach()
+
+        self.W += lr * ((pos_associations - neg_associations) / v_pos.shape[0] - weight_decay_term + momentum_term)
+        self.bv += lr * torch.mean(v_pos - v_neg, dim=0)
+        self.bh += lr * torch.mean(pos_hidden - neg_hidden, dim=0)
+
+rbm = RBM(n_visible=784, n_hidden=128)
+optimizer = torch.optim.SGD(rbm.parameters(), lr=0.1)
+
+for epoch in range(10):
+    for batch in data_loader:
+        batch = batch.view(batch.size(0), -1)
+        v_pos, v_neg, h = rbm.contrastive_divergence(batch, k=1)
+        rbm.update(v_pos, v_neg, lr=0.1, weight_decay=0.0001, momentum=0.5)
+
+# This code defines a RBM class using the PyTorch nn.Module interface. The RBM class has methods for sampling the hidden and visible units, computing the free energy, and performing contrastive divergence for training. The update method updates the RBM's weights and biases using stochastic gradient descent with weight decay and momentum. Finally, the code trains the RBM on a dataset using contrastive divergence.

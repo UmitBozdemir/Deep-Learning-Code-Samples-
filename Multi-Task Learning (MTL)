@@ -1,0 +1,58 @@
+# Multi-Task Learning (MTL) is a deep learning technique that involves training a single neural network to perform multiple related tasks simultaneously. In traditional deep learning, a separate neural network is typically trained for each specific task. However, MTL allows the sharing of information and representations across different tasks, which can lead to better performance and faster training times.
+
+# In MTL, a neural network is typically composed of shared layers that extract common features and task-specific layers that are designed to predict the output of each task. During training, the shared layers are updated based on the gradients of all the tasks, while the task-specific layers are updated only based on the gradients of their corresponding task.
+
+# MTL has been applied successfully to a variety of applications in natural language processing, computer vision, and other domains. Some benefits of MTL include improved performance on individual tasks, better generalization to new tasks, and reduced model complexity.
+
+# Here is a code sample of Multi-Task Learning in PyTorch:
+import torch
+import torch.nn as nn
+import torch.optim as optim
+
+class MultiTaskModel(nn.Module):
+    def __init__(self):
+        super(MultiTaskModel, self).__init__()
+        self.shared_layer = nn.Sequential(
+            nn.Conv2d(in_channels=3, out_channels=64, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2)
+        )
+        self.task1_layer = nn.Sequential(
+            nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2),
+            nn.Flatten(),
+            nn.Linear(128 * 7 * 7, 10)
+        )
+        self.task2_layer = nn.Sequential(
+            nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2),
+            nn.Flatten(),
+            nn.Linear(128 * 7 * 7, 2)
+        )
+
+    def forward(self, x):
+        x = self.shared_layer(x)
+        task1_output = self.task1_layer(x)
+        task2_output = self.task2_layer(x)
+        return task1_output, task2_output
+
+model = MultiTaskModel()
+
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+criterion1 = nn.CrossEntropyLoss()
+criterion2 = nn.CrossEntropyLoss()
+
+for epoch in range(num_epochs):
+    for i, (inputs, targets1, targets2) in enumerate(data_loader):
+        optimizer.zero_grad()
+        task1_outputs, task2_outputs = model(inputs)
+        loss1 = criterion1(task1_outputs, targets1)
+        loss2 = criterion2(task2_outputs, targets2)
+        loss = loss1 + loss2
+        loss.backward()
+        optimizer.step()
+
+# In this example, we define a Multi-Task Model with a shared layer and two task-specific layers for classification tasks. The model takes input images with three channels and produces two outputs for two different tasks. We define the loss functions and optimizer separately for each task, and during training, we compute the total loss as the sum of the losses for both tasks. The optimizer updates the shared layer weights based on the gradients of both tasks, while the task-specific layers are updated only based on the gradients of their corresponding task.

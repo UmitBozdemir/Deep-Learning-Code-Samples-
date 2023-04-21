@@ -1,0 +1,38 @@
+# L1 regularization, also known as Lasso regularization, is a type of regularization technique used in deep learning to prevent overfitting. Overfitting occurs when a model is trained to fit the training data too closely, resulting in poor performance on new, unseen data.
+
+# L1 regularization works by adding a penalty term to the loss function of the model. This penalty term is proportional to the absolute value of the weights of the model. By adding this penalty term, the model is encouraged to have smaller weights, which can help to reduce overfitting.
+
+# The amount of regularization is controlled by a hyperparameter called the regularization parameter, which is typically chosen using cross-validation. Higher values of the regularization parameter lead to more regularization and smaller weights, while lower values lead to less regularization and larger weights.
+
+# Overall, L1 regularization can be a useful tool in preventing overfitting in deep learning models, particularly when dealing with high-dimensional data where there may be many irrelevant features.
+
+# Here is a code sample of how to apply L1 regularization to a neural network in Python using TensorFlow:
+import tensorflow as tf
+
+# define the model architecture
+model = tf.keras.models.Sequential([
+    tf.keras.layers.Dense(64, activation='relu', input_shape=(input_size,)),
+    tf.keras.layers.Dense(32, activation='relu'),
+    tf.keras.layers.Dense(num_classes, activation='softmax')
+])
+
+# add L1 regularization to the model
+l1_regularizer = tf.keras.regularizers.l1(0.01) # regularization parameter is 0.01
+for layer in model.layers:
+    if hasattr(layer, 'kernel_regularizer'):
+        layer.kernel_regularizer = l1_regularizer
+
+# compile the model
+model.compile(optimizer='adam',
+              loss='categorical_crossentropy',
+              metrics=['accuracy'])
+
+# train the model
+history = model.fit(x_train, y_train,
+                    epochs=10,
+                    batch_size=32,
+                    validation_data=(x_test, y_test))
+
+# In this example, we add L1 regularization to the weights of each layer in the model using tf.keras.regularizers.l1() and set the regularization parameter to 0.01. We then loop through each layer in the model and set the kernel_regularizer attribute to the L1 regularizer.
+
+# We then compile and train the model as usual. During training, the L1 regularization penalty will be added to the loss function, encouraging the model to have smaller weights and reducing the risk of overfitting.

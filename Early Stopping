@@ -1,0 +1,30 @@
+# Early stopping is a technique used in deep learning to prevent overfitting of the model to the training data. It involves monitoring the performance of the model on a validation dataset during training, and stopping the training process when the performance on the validation set starts to degrade.
+
+# The idea is that as the model becomes more complex and starts to overfit the training data, its performance on the validation set will start to worsen. Early stopping allows the model to be trained for just the right number of epochs, which typically occurs when the validation error is at a minimum.
+
+# By stopping training early, the model can avoid overfitting and achieve better generalization performance on unseen data. Early stopping is a popular regularization technique in deep learning and is often used in conjunction with other techniques such as dropout, weight decay, and batch normalization to improve the overall performance of the model.
+
+# Here is an example of how to implement early stopping in Keras, a popular deep learning library:
+from keras.callbacks import EarlyStopping
+
+# define early stopping callback
+earlystop_callback = EarlyStopping(
+    monitor='val_loss', # monitor validation loss
+    min_delta=0.001, # minimum change in validation loss to qualify as an improvement
+    patience=3, # number of epochs to wait for an improvement before stopping
+    verbose=1, # print a message when stopping
+    mode='min' # minimize validation loss
+)
+
+# train the model and use early stopping
+model.fit(
+    x_train, y_train,
+    validation_data=(x_val, y_val),
+    epochs=50,
+    batch_size=32,
+    callbacks=[earlystop_callback]
+)
+
+# In this example, the EarlyStopping callback is created with the monitor parameter set to 'val_loss' to monitor the validation loss. The min_delta parameter specifies the minimum change in validation loss that must occur to qualify as an improvement, and the patience parameter specifies the number of epochs to wait for an improvement before stopping. The verbose parameter controls whether a message is printed when the training is stopped due to early stopping. Finally, the mode parameter specifies whether to minimize or maximize the monitored metric.
+
+# The EarlyStopping callback is passed as an argument to the fit() method, which trains the model on the training data and uses the validation data to monitor the performance of the model. When the validation loss fails to improve for patience number of epochs, the training is stopped early.

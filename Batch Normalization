@@ -1,0 +1,45 @@
+# Batch normalization is a technique in deep learning that is used to improve the performance and training stability of artificial neural networks. It involves normalizing the inputs of each layer in a network to have a zero mean and unit variance, which helps to reduce the internal covariate shift problem.
+
+# The internal covariate shift refers to the phenomenon where the distribution of the inputs to a layer changes during training, which can make it difficult for the network to converge. By normalizing the inputs, batch normalization helps to reduce the effect of the internal covariate shift and speed up the training process.
+
+# Batch normalization is typically applied after the linear transformation of each layer and before the activation function. During training, batch normalization computes the mean and variance of the inputs over a mini-batch of data and uses them to normalize the inputs. These normalized inputs are then scaled and shifted by learned parameters, which allows the network to learn the optimal scale and shift for each layer.
+
+# Batch normalization has been shown to improve the performance of deep neural networks on a variety of tasks, including image classification, object detection, and machine translation.
+
+# Here's an example code snippet in Python using PyTorch that demonstrates how to use batch normalization in a neural network:
+import torch
+import torch.nn as nn
+
+# Define a neural network with batch normalization
+class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        self.fc1 = nn.Linear(784, 256)
+        self.bn1 = nn.BatchNorm1d(256)
+        self.fc2 = nn.Linear(256, 128)
+        self.bn2 = nn.BatchNorm1d(128)
+        self.fc3 = nn.Linear(128, 10)
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.bn1(x)
+        x = nn.functional.relu(x)
+        x = self.fc2(x)
+        x = self.bn2(x)
+        x = nn.functional.relu(x)
+        x = self.fc3(x)
+        return x
+
+# Create a batch of input data
+x = torch.randn(64, 784)
+
+# Instantiate the neural network
+net = Net()
+
+# Apply batch normalization to the input data
+x = net.bn1(x)
+
+# Pass the input data through the neural network
+output = net(x)
+
+# In this example, we define a neural network with batch normalization layers (nn.BatchNorm1d()) after each linear layer. We then create a batch of input data (x) and apply batch normalization to it using the first batch normalization layer (net.bn1(x)). Finally, we pass the normalized input through the neural network to produce the output.

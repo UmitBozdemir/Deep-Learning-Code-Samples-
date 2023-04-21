@@ -1,35 +1,90 @@
-# Transformer Networks are a type of deep neural network architecture that was introduced in a 2017 paper by Vaswani et al. They are designed to process sequential data, such as natural language text, and have become a popular choice for a wide range of natural language processing (NLP) tasks, including language translation, sentiment analysis, and question-answering.
+# Transformer networks are a type of deep learning architecture that was introduced in 2017 by Vaswani et al. in the paper "Attention Is All You Need." Transformer networks are primarily used for natural language processing (NLP) tasks such as machine translation, language modeling, and text generation.
 
-# The Transformer architecture is based on a self-attention mechanism that allows the network to selectively focus on different parts of the input sequence, rather than processing the sequence sequentially from beginning to end. This enables the network to capture long-range dependencies in the data and process sequences more efficiently.
+# The key innovation of Transformer networks is their use of self-attention mechanisms, which allow the network to selectively focus on different parts of the input sequence during processing. Unlike traditional recurrent neural networks (RNNs) or convolutional neural networks (CNNs), Transformer networks do not rely on a fixed, sequential processing order.
 
-# The Transformer consists of an encoder and a decoder, each of which is composed of multiple layers of self-attention and feedforward neural networks. The encoder processes the input sequence and generates a sequence of hidden representations, while the decoder generates the output sequence based on these representations and an attention mechanism that combines information from the input sequence.
+# Instead, Transformer networks use multi-head attention, which computes attention scores between all pairs of positions in the input sequence in parallel. This allows the network to capture complex relationships between different parts of the input sequence, without being limited by the sequential nature of RNNs or the local connectivity of CNNs.
 
-# One of the main advantages of the Transformer is its ability to parallelize computations across the input sequence, which makes it much faster than traditional recurrent neural networks (RNNs) for processing long sequences. The Transformer has also been shown to achieve state-of-the-art performance on a wide range of NLP tasks.
+# Transformer networks typically consist of an encoder and a decoder. The encoder processes the input sequence using multiple layers of self-attention and feedforward networks, while the decoder generates the output sequence by attending to the encoded input sequence and using self-attention to generate the output one token at a time.
 
-# Here's a code sample of a basic Transformer network implemented using the PyTorch deep learning framework:
+# Overall, Transformer networks have demonstrated state-of-the-art performance on a wide range of NLP tasks, and their success has led to the development of numerous transformer-based models such as BERT, GPT-2, and T5.
+
+# Here's a code sample of a basic transformer network for sequence-to-sequence learning using PyTorch:
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
-class Transformer(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers, num_heads):
-        super(Transformer, self).__init__()
-        self.embedding = nn.Embedding(input_size, hidden_size)
-        self.encoder = nn.TransformerEncoder(
-            nn.TransformerEncoderLayer(hidden_size, num_heads),
-            num_layers
-        )
-        self.decoder = nn.Linear(hidden_size, input_size)
+class TransformerEncoder(nn.Module):
+    def __init__(self, input_dim, hid_dim, n_layers, n_heads, pf_dim, dropout):
+        super().__init__()
+
+        self.tok_embedding = nn.Embedding(input_dim, hid_dim)
+        self.pos_embedding = nn.Embedding(1000, hid_dim)
+
+        self.layers = nn.ModuleList([TransformerEncoderLayer(hid_dim, n_heads, pf_dim, dropout) for _ in range(n_layers)])
+
+        self.dropout = nn.Dropout(dropout)
+        self.scale = torch.sqrt(torch.FloatTensor([hid_dim])).to(device)
 
     def forward(self, src):
-        embedded = self.embedding(src)
-        encoded = self.encoder(embedded)
-        decoded = self.decoder(encoded[-1])
-        return decoded
 
-# In this example, we define a class called Transformer that inherits from nn.Module, the base class for all neural network modules in PyTorch.
+        #src = [batch_size, src_len]
 
-# The constructor of the Transformer class takes four arguments: input_size, which is the size of the input vocabulary; hidden_size, which is the size of the hidden layers in the Transformer; num_layers, which is the number of Transformer encoder layers; and num_heads, which is the number of attention heads used in each Transformer encoder layer.
+        batch_size = src.shape[0]
+        src_len = src.shape[1]
 
-# In the constructor, we define three submodules of the Transformer: an Embedding layer that converts input tokens to dense vectors of size hidden_size; a TransformerEncoder layer that processes the embedded input sequence using num_layers Transformer encoder layers, each with num_heads attention heads; and a linear layer that maps the final hidden state to the output vocabulary size.
+        pos = torch.arange(0, src_len).unsqueeze(0).repeat(batch_size, 1).to(device)
 
-# The forward method of the Transformer class takes a batch of input sequences src and passes them through the embedded, encoded, and decoded layers of the Transformer. The output of the forward method is the logits of the output vocabulary for each sequence in the batch.
+        #pos = [batch_size, src_len]
+
+        src = self.dropout((self.tok_embedding(src) * self.scale) + self.pos_embedding(pos))
+
+        #src = [batch_size, src_len, hid_dim]
+
+        for layer in self.layers:
+            src = layer(src)
+
+        #src = [batch_size, src_len, hid_dim]
+
+        return src
+
+
+class TransformerEncoderLayer(nn.Module):
+    def __init__(self, hid_dim, n_heads, pf_dim, dropout):
+        super().__init__()
+
+        self.self_attn_layer_norm = nn.LayerNorm(hid_dim)
+        self.ff_layer_norm = nn.LayerNorm(hid_dim)
+        self.self_attention = nn.MultiheadAttention(hid_dim, n_heads)
+        self.positionwise_feedforward = nn.Sequential(
+            nn.Linear(hid_dim, pf_dim),
+            nn.ReLU(),
+            nn.Linear(pf_dim, hid_dim),
+            nn.Dropout(dropout)
+        )
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, src):
+
+        #src = [batch_size, src_len, hid_dim]
+
+        #self attention
+        _src, _ = self.self_attention(src, src, src)
+
+        #dropout, residual connection and layer norm
+        src = self.self_attn_layer_norm(src + self.dropout(_src))
+
+        #src = [batch_size, src_len, hid_dim]
+
+        #positionwise feedforward
+        _src = self.positionwise_feedforward(src)
+
+        #dropout, residual and layer norm
+        src = self.ff_layer_norm(src + self.dropout(_src))
+
+        #src = [batch_size, src_len, hid_dim]
+
+        return src
+
+# This code defines a TransformerEncoder class and a TransformerEncoderLayer class, which can be used to build an encoder for a transformer-based sequence-to-sequence model. The TransformerEncoder takes in an input sequence, applies multiple self-attention layers, and outputs an encoded representation of the input sequence. The TransformerEncoderLayer is used to define the individual self-attention layers within the encoder.
+
+# Note that this is just a basic example, and the architecture and hyperparameters may need to be modified depending on the specific task and dataset.

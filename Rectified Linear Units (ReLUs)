@@ -1,0 +1,27 @@
+# Rectified Linear Units (ReLU) is an activation function commonly used in deep learning neural networks. It is a simple piecewise linear function that returns the input if it is positive and 0 if it is negative.
+
+# Mathematically, the ReLU activation function can be defined as:
+# f(x) = max(0, x)
+# where x is the input to the neuron and f(x) is the output. The ReLU function has the advantage of being computationally efficient and easy to implement, and it has been shown to be effective in many deep learning models.
+
+# ReLU can be used in any layer of a neural network, and it is especially useful in the hidden layers. It helps to solve the vanishing gradient problem by preventing the gradient from becoming too small as it passes through the network. It also helps to improve the sparsity of the activations, which can lead to more efficient computation and better generalization.
+
+# Here's an example of implementing ReLU in Python using the NumPy library:
+import numpy as np
+
+def relu(x):
+    return np.maximum(0, x)
+In this example, the relu function takes an input x and returns the maximum between 0 and x using the NumPy maximum function. This ensures that the output of the function is always non-negative.
+
+Here's an example of using the relu function in a neural network:
+
+python
+Copy code
+import tensorflow as tf
+
+model = tf.keras.models.Sequential([
+    tf.keras.layers.Dense(64, activation='relu'),
+    tf.keras.layers.Dense(10, activation='softmax')
+])
+
+# In this example, we define a neural network with two layers using the Keras API of TensorFlow. The first layer has 64 neurons and uses the ReLU activation function. The second layer has 10 neurons and uses the softmax activation function. The ReLU activation function is commonly used in the hidden layers of neural networks to introduce non-linearity and improve the network's ability to learn complex relationships between inputs and outputs.

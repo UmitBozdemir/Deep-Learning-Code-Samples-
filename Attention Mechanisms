@@ -1,0 +1,32 @@
+# In machine learning, an attention mechanism is a technique used in neural networks that allows the network to selectively focus on certain parts of the input when making predictions.
+
+# The attention mechanism is based on the idea that different parts of the input may be more relevant to the prediction than others. By assigning different weights to different parts of the input, the attention mechanism allows the neural network to selectively focus on the most important information when making predictions.
+
+# Attention mechanisms are commonly used in natural language processing (NLP) tasks such as machine translation and text summarization, where the input is typically a sequence of words. By selectively attending to certain words in the input sequence, the attention mechanism can improve the accuracy of the model's predictions.
+
+# Overall, attention mechanisms have proven to be a powerful tool for improving the performance of machine learning models, particularly in tasks involving sequential data.
+
+# Here's a code sample of how an attention mechanism can be implemented in PyTorch:
+import torch
+import torch.nn as nn
+
+class Attention(nn.Module):
+    def __init__(self, input_size, hidden_size):
+        super(Attention, self).__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.attn = nn.Linear(self.input_size + self.hidden_size, 1)
+
+    def forward(self, input, hidden_states):
+        seq_len = hidden_states.size(0)
+        hidden_with_input = torch.cat((input.expand(seq_len, -1, -1), hidden_states), dim=2)
+        energies = self.attn(hidden_with_input)
+        attn_weights = torch.softmax(energies.squeeze(), dim=0)
+        context_vector = torch.sum(attn_weights.unsqueeze(1) * hidden_states, dim=0)
+        return context_vector, attn_weights
+
+# In this example, we define an Attention class that takes in an input_size and a hidden_size. The forward method takes in an input and a sequence of hidden states, and returns a context vector and attention weights.
+
+# Inside the forward method, we first concatenate the input with the hidden states along the time step dimension. We then apply a linear layer to this concatenated tensor to compute the energies. We then apply a softmax activation to the energies to obtain the attention weights. Finally, we compute the context vector as a weighted sum of the hidden states, where the weights are given by the attention weights.
+
+# This is just one example of how an attention mechanism can be implemented in PyTorch. The exact details will depend on the specific application and model architecture.

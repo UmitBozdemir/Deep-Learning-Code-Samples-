@@ -1,0 +1,46 @@
+# In deep learning, recurrent connections refer to connections between nodes in a neural network that allow information to be passed from one iteration or time step to the next. This type of connection is commonly used in recurrent neural networks (RNNs), which are designed to handle sequential data, such as time-series or language data.
+
+# Unlike feedforward connections, which only pass information in a forward direction, recurrent connections allow the network to store and process information from previous time steps. This enables RNNs to model temporal dependencies and long-term dependencies in data, making them well-suited for tasks such as speech recognition, language translation, and stock market prediction.
+
+# In an RNN, each node has an internal state that is updated based on the current input and the previous state. The output of the node is then passed to the next time step and used as input for the next node in the sequence. This process is repeated for each time step, allowing the network to process sequences of variable length.
+
+# Here's a code sample of how recurrent connections can be implemented using the PyTorch library in Python:
+import torch
+import torch.nn as nn
+
+class RNN(nn.Module):
+    def __init__(self, input_size, hidden_size, num_layers):
+        super(RNN, self).__init__()
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.rnn = nn.RNN(input_size, hidden_size, num_layers, batch_first=True)
+
+    def forward(self, x):
+        # Initialize hidden state with zeros
+        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
+        
+        # Forward propagate RNN
+        out, _ = self.rnn(x, h0)
+        
+        return out
+
+# In this example, we define a simple RNN model using the nn.RNN module provided by PyTorch. The __init__ method initializes the model with the input size, hidden size, and number of layers. In the forward method, we first initialize the hidden state with zeros and then forward propagate the input x through the RNN. The output of the RNN is returned. Note that we use the batch_first=True argument to specify that the batch dimension comes first in the input tensor.
+
+# To use this model, we can instantiate it with the desired input size, hidden size, and number of layers and then pass input sequences through it. For example:
+input_size = 10
+hidden_size = 20
+num_layers = 2
+seq_length = 5
+batch_size = 3
+
+rnn = RNN(input_size, hidden_size, num_layers)
+
+# Generate random input sequence
+x = torch.randn(batch_size, seq_length, input_size)
+
+# Pass input sequence through RNN
+out = rnn(x)
+
+print(out.shape) # should print: torch.Size([3, 5, 20])
+
+# Here, we create a random input sequence of shape (batch_size, seq_length, input_size) and pass it through the RNN using the forward method. The output tensor has shape (batch_size, seq_length, hidden_size), where hidden_size is the size of the hidden state of the RNN.

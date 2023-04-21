@@ -1,0 +1,20 @@
+# Max pooling is a technique used in deep learning for down-sampling input data. It operates on a 2D input tensor, typically output from a convolutional layer. Max pooling partitions the input tensor into a set of non-overlapping rectangles, and for each rectangle, it outputs the maximum value. This process reduces the spatial dimensions of the input tensor while preserving the most important information, i.e., the maximum activations.
+
+# Max pooling is often used in convolutional neural networks (CNNs) as a way to reduce the spatial resolution of feature maps while maintaining the salient features. The downsampling effect of max pooling also helps to reduce the computational complexity of subsequent layers, thus speeding up the training and inference process.
+
+# Here is an example code snippet of max pooling operation in Python using TensorFlow:
+import tensorflow as tf
+
+# Define input tensor
+input_tensor = tf.constant([[1.0, 2.0, 3.0, 4.0],
+                            [5.0, 6.0, 7.0, 8.0],
+                            [9.0, 10.0, 11.0, 12.0],
+                            [13.0, 14.0, 15.0, 16.0]])
+
+# Apply max pooling operation with kernel size of 2x2 and stride of 2
+output_tensor = tf.nn.max_pool(input_tensor, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='VALID')
+
+# Print output tensor
+print(output_tensor.numpy())
+
+# In this example, we first define an input tensor of shape (4, 4). We then apply max pooling with a kernel size of 2x2 and stride of 2, which means the input tensor is partitioned into non-overlapping 2x2 rectangles, and the maximum value is selected for each rectangle. The resulting output tensor has shape (2, 2), which is half the size of the input tensor. The padding argument specifies whether to add padding to the edges of the input tensor when applying the max pooling operation. In this case, we set padding='VALID', which means no padding is added.

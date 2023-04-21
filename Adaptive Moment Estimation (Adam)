@@ -1,0 +1,35 @@
+# Adaptive Moment Estimation (Adam) is a popular optimization algorithm used in deep learning for updating the parameters of a model during training. It is an extension of Stochastic Gradient Descent (SGD) that computes adaptive learning rates for each parameter instead of using a fixed learning rate for all parameters.
+
+# Adam maintains an exponentially decaying average of past gradients and past squared gradients, which are used to update the parameters. This allows the algorithm to adaptively tune the learning rate based on the past gradients, leading to faster convergence and better performance.
+
+# The update rule for Adam involves computing the first and second moments of the gradients, and then using them to update the parameters:
+# Compute the gradient of the loss with respect to the parameters
+# Compute the first moment of the gradient (mean) and the second moment of the gradient (variance)
+# Update the parameters using the computed moments and a learning rate
+
+# Adam also includes bias correction terms to adjust for the fact that the first and second moments may be biased estimates of the true moments, especially in the early stages of training.
+
+# Overall, Adam is a widely used optimization algorithm in deep learning due to its ability to adaptively adjust the learning rate, which can result in faster convergence and better performance.
+
+# Here's an example code sample in Python using TensorFlow to implement Adam optimization in a neural network:
+import tensorflow as tf
+
+# Define the neural network architecture
+model = tf.keras.Sequential([
+  tf.keras.layers.Dense(64, activation='relu'),
+  tf.keras.layers.Dense(10)
+])
+
+# Define the optimizer with Adam algorithm
+optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+
+# Define the loss function
+loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+
+# Compile the model with optimizer and loss function
+model.compile(optimizer=optimizer, loss=loss_fn, metrics=['accuracy'])
+
+# Train the model with Adam optimizer
+model.fit(x_train, y_train, epochs=10, batch_size=32)
+
+# In this example, we define a neural network with two dense layers and use the Adam optimizer with a learning rate of 0.001. We also define the loss function as SparseCategoricalCrossentropy and compile the model with the optimizer and loss function. Finally, we train the model using the fit() method with the Adam optimizer.

@@ -1,0 +1,71 @@
+# Actor-critic methods are a class of reinforcement learning algorithms that combine elements of value-based and policy-based methods. In these algorithms, there are two main components: an actor and a critic.
+
+# The actor is responsible for selecting actions based on a policy that maps states to probabilities of taking each action. The policy is learned through trial and error and is updated based on the feedback received from the environment.
+
+# The critic, on the other hand, evaluates the value of the state-action pairs and provides feedback to the actor. The critic uses a value function to estimate the expected return of the current state or state-action pair. The value function is learned through trial and error and is updated based on the feedback received from the environment.
+
+# The actor-critic methods use the feedback from the critic to improve the actor's policy. This feedback can be in the form of rewards or penalties received from the environment or estimates of the expected return from the value function.
+
+# One of the main advantages of actor-critic methods is that they can learn online and adapt to changing environments. They also have the potential to learn faster and achieve better results than other reinforcement learning algorithms.
+
+# Here's a Python code sample that implements an actor-critic method using deep learning with the Keras library:
+import numpy as np
+import keras.backend as K
+from keras.layers import Dense, Input
+from keras.models import Model
+from keras.optimizers import Adam
+
+class ActorCritic:
+    def __init__(self, state_size, action_size, actor_lr, critic_lr, gamma):
+        self.state_size = state_size
+        self.action_size = action_size
+        self.actor_lr = actor_lr
+        self.critic_lr = critic_lr
+        self.gamma = gamma
+        self.actor, self.critic, self.policy = self._build_model()
+
+    def _build_model(self):
+        # Input layer
+        state = Input(shape=(self.state_size,))
+        
+        # Actor layer
+        actor_hidden = Dense(256, activation='relu')(state)
+        action_prob = Dense(self.action_size, activation='softmax')(actor_hidden)
+        actor = Model(inputs=state, outputs=action_prob)
+
+        # Critic layer
+        critic_hidden = Dense(256, activation='relu')(state)
+        value = Dense(1, activation='linear')(critic_hidden)
+        critic = Model(inputs=state, outputs=value)
+
+        # Policy
+        policy = K.function([actor.input], [actor.output])
+        return actor, critic, policy
+
+    def act(self, state):
+        action_prob = np.squeeze(self.policy([state])[0])
+        action = np.random.choice(self.action_size, p=action_prob)
+        return action
+
+    def train_model(self, state, action, reward, next_state, done):
+        next_value = self.critic.predict(next_state)
+        current_value = self.critic.predict(state)
+
+        target = reward + (1 - done) * self.gamma * next_value
+        advantage = target - current_value
+
+        # Train actor
+        action_one_hot = K.one_hot(action, self.action_size)
+        log_prob = K.log(self.policy([state])[0] + 1e-10)
+        loss = -K.sum(log_prob * K.stop_gradient(advantage * action_one_hot))
+        actor_optimizer = Adam(lr=self.actor_lr)
+        actor_updates = actor_optimizer.get_updates(self.actor.trainable_weights, [], loss)
+        K.function([self.actor.input, action_one_hot, advantage], [], updates=actor_updates)
+
+        # Train critic
+        critic_loss = K.mean(K.square(target - current_value))
+        critic_optimizer = Adam(lr=self.critic_lr)
+        critic_updates = critic_optimizer.get_updates(self.critic.trainable_weights, [], critic_loss)
+        K.function([self.critic.input, target], [], updates=critic_updates)
+
+# In this code sample, the ActorCritic class initializes the actor, critic, and policy using a deep neural network with two hidden layers of 256 units. The act method selects an action based on the current state and the policy. The train_model method updates the actor and critic using the feedback received from the environment. The advantage is calculated as the difference between the target value and the current value. The actor and critic are trained using the Adam optimizer with different learning rates.

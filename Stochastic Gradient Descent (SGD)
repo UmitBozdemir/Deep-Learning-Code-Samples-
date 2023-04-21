@@ -1,0 +1,59 @@
+# Stochastic Gradient Descent (SGD) is an optimization algorithm commonly used in deep learning to minimize the loss function of a neural network. It is a variant of gradient descent, which updates the model parameters in the direction of the negative gradient of the loss function with respect to the parameters.
+
+# However, instead of computing the gradient over the entire dataset, as in batch gradient descent, SGD updates the parameters based on a randomly selected subset of the data, called a mini-batch. This random sampling of mini-batches helps to reduce the computational cost and improve the convergence rate of the optimization algorithm.
+
+# SGD works by iteratively updating the model parameters according to the following formula:
+# θ' = θ - α * ∇L(θ;x_i,y_i)
+# where θ is the current model parameters, α is the learning rate, L(θ;x_i,y_i) is the loss function for a particular mini-batch (x_i, y_i), and ∇L(θ;x_i,y_i) is the gradient of the loss function with respect to the parameters.
+
+# By repeatedly applying this update rule with different mini-batches, the algorithm slowly moves the parameters towards the minimum of the loss function, hopefully reaching a good local minimum that corresponds to a good set of parameters for the neural network.
+
+# Here's a code sample of how Stochastic Gradient Descent (SGD) can be implemented in Python using the popular deep learning library, PyTorch:
+import torch
+import torch.nn as nn
+import torch.optim as optim
+
+# Define the neural network
+class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        self.fc1 = nn.Linear(784, 256)
+        self.fc2 = nn.Linear(256, 10)
+
+    def forward(self, x):
+        x = x.view(-1, 784)
+        x = nn.functional.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+
+# Load the dataset and create a data loader
+train_dataset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transforms.ToTensor())
+train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=64, shuffle=True)
+
+# Instantiate the neural network and the optimizer
+net = Net()
+optimizer = optim.SGD(net.parameters(), lr=0.01)
+
+# Train the neural network using Stochastic Gradient Descent
+num_epochs = 10
+for epoch in range(num_epochs):
+    for i, (inputs, targets) in enumerate(train_loader):
+        optimizer.zero_grad()  # Reset the gradients to zero
+        outputs = net(inputs)  # Forward pass
+        loss = nn.functional.cross_entropy(outputs, targets)  # Compute the loss
+        loss.backward()  # Backward pass
+        optimizer.step()  # Update the parameters
+
+        if (i+1) % 100 == 0:
+            print(f"Epoch {epoch+1}/{num_epochs}, Batch {i+1}/{len(train_loader)}, Loss: {loss.item():.4f}")
+
+# In this example, we first define a simple neural network with two fully connected layers. We then load the MNIST dataset and create a data loader that will feed mini-batches of 64 images and labels to the neural network during training. We also instantiate the SGD optimizer with a learning rate of 0.01.
+
+# During training, we iterate over each mini-batch in the data loader and perform the following steps:
+# Reset the gradients to zero using optimizer.zero_grad()
+# Forward pass the inputs through the neural network using net(inputs)
+# Compute the loss using the cross-entropy loss function with nn.functional.cross_entropy(outputs, targets)
+# Backward pass the loss through the network using loss.backward()
+# Update the parameters of the network using the SGD optimizer with optimizer.step()
+
+# We also print out the training loss every 100 mini-batches for monitoring purposes. After training for 10 epochs, the neural network should have learned to classify the MNIST images with a decent accuracy.

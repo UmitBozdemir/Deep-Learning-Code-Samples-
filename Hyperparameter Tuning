@@ -1,0 +1,44 @@
+# Hyperparameter tuning is the process of selecting the best set of hyperparameters for a deep learning model. Hyperparameters are the parameters that determine how a model learns and includes things like the number of layers in the network, the learning rate, the batch size, and the regularization strength. The process of hyperparameter tuning involves adjusting these parameters to find the best combination of hyperparameters that will result in the best performance on a given task. This process is often done through trial and error or by using techniques such as grid search, random search, or Bayesian optimization. The goal of hyperparameter tuning is to find the best set of hyperparameters that will result in the most accurate and reliable predictions on new data.
+
+# Here is an example of hyperparameter tuning in deep learning using Keras and scikit-learn libraries in Python:
+import numpy as np
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+from sklearn.model_selection import RandomizedSearchCV
+
+# Define the model architecture
+def create_model(num_layers=2, num_neurons=64, dropout_rate=0.2, input_shape=(784,)):
+    model = keras.Sequential()
+    model.add(layers.Dense(num_neurons, activation='relu', input_shape=input_shape))
+    model.add(layers.Dropout(dropout_rate))
+    for i in range(num_layers):
+        model.add(layers.Dense(num_neurons, activation='relu'))
+        model.add(layers.Dropout(dropout_rate))
+    model.add(layers.Dense(10, activation='softmax'))
+    return model
+
+# Load the MNIST dataset
+(X_train, y_train), (X_test, y_test) = keras.datasets.mnist.load_data()
+X_train = X_train.reshape(-1, 784) / 255.0
+X_test = X_test.reshape(-1, 784) / 255.0
+
+# Define the hyperparameters to be tuned and their possible values
+hyperparameters = {
+    'num_layers': [1, 2, 3],
+    'num_neurons': [32, 64, 128],
+    'dropout_rate': [0.1, 0.2, 0.3]
+}
+
+# Create a Keras classifier model and wrap it in a scikit-learn wrapper
+model = keras.wrappers.scikit_learn.KerasClassifier(build_fn=create_model, epochs=10, batch_size=32, verbose=0)
+
+# Perform randomized search cross-validation to find the best hyperparameters
+random_search = RandomizedSearchCV(model, hyperparameters, n_iter=10, cv=3, verbose=2)
+random_search.fit(X_train, y_train)
+
+# Print the best hyperparameters and their corresponding accuracy score
+print("Best hyperparameters:", random_search.best_params_)
+print("Best accuracy score:", random_search.best_score_)
+
+# In this example, we use a multi-layer perceptron (MLP) model with varying numbers of layers, neurons, and dropout rates to classify the MNIST dataset. We define a function create_model that constructs the MLP model with the given hyperparameters, and then use scikit-learn's RandomizedSearchCV function to perform randomized search cross-validation over a range of hyperparameters to find the best combination of hyperparameters. The output shows the best hyperparameters found and their corresponding accuracy score.

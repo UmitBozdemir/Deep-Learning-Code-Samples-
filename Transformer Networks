@@ -1,0 +1,35 @@
+# Transformer Networks are a type of deep neural network architecture that was introduced in a 2017 paper by Vaswani et al. They are designed to process sequential data, such as natural language text, and have become a popular choice for a wide range of natural language processing (NLP) tasks, including language translation, sentiment analysis, and question-answering.
+
+# The Transformer architecture is based on a self-attention mechanism that allows the network to selectively focus on different parts of the input sequence, rather than processing the sequence sequentially from beginning to end. This enables the network to capture long-range dependencies in the data and process sequences more efficiently.
+
+# The Transformer consists of an encoder and a decoder, each of which is composed of multiple layers of self-attention and feedforward neural networks. The encoder processes the input sequence and generates a sequence of hidden representations, while the decoder generates the output sequence based on these representations and an attention mechanism that combines information from the input sequence.
+
+# One of the main advantages of the Transformer is its ability to parallelize computations across the input sequence, which makes it much faster than traditional recurrent neural networks (RNNs) for processing long sequences. The Transformer has also been shown to achieve state-of-the-art performance on a wide range of NLP tasks.
+
+# Here's a code sample of a basic Transformer network implemented using the PyTorch deep learning framework:
+import torch
+import torch.nn as nn
+
+class Transformer(nn.Module):
+    def __init__(self, input_size, hidden_size, num_layers, num_heads):
+        super(Transformer, self).__init__()
+        self.embedding = nn.Embedding(input_size, hidden_size)
+        self.encoder = nn.TransformerEncoder(
+            nn.TransformerEncoderLayer(hidden_size, num_heads),
+            num_layers
+        )
+        self.decoder = nn.Linear(hidden_size, input_size)
+
+    def forward(self, src):
+        embedded = self.embedding(src)
+        encoded = self.encoder(embedded)
+        decoded = self.decoder(encoded[-1])
+        return decoded
+
+# In this example, we define a class called Transformer that inherits from nn.Module, the base class for all neural network modules in PyTorch.
+
+# The constructor of the Transformer class takes four arguments: input_size, which is the size of the input vocabulary; hidden_size, which is the size of the hidden layers in the Transformer; num_layers, which is the number of Transformer encoder layers; and num_heads, which is the number of attention heads used in each Transformer encoder layer.
+
+# In the constructor, we define three submodules of the Transformer: an Embedding layer that converts input tokens to dense vectors of size hidden_size; a TransformerEncoder layer that processes the embedded input sequence using num_layers Transformer encoder layers, each with num_heads attention heads; and a linear layer that maps the final hidden state to the output vocabulary size.
+
+# The forward method of the Transformer class takes a batch of input sequences src and passes them through the embedded, encoded, and decoded layers of the Transformer. The output of the forward method is the logits of the output vocabulary for each sequence in the batch.

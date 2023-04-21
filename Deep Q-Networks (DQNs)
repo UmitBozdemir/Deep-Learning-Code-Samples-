@@ -1,0 +1,76 @@
+# Deep Q-Networks (DQNs) are a type of artificial neural network used in deep reinforcement learning. DQNs are designed to learn an optimal policy for an agent to take actions in an environment by approximating the optimal action-value function, also known as the Q-function.
+
+# The Q-function represents the expected cumulative reward an agent will receive by taking a certain action in a given state and following a certain policy. In a DQN, the Q-function is approximated using a deep neural network with one or more hidden layers. The input to the network is the state of the environment, and the output is a vector of Q-values, one for each possible action.
+
+# DQNs use a variant of the Q-learning algorithm to update the Q-values during training. The algorithm involves a form of temporal difference learning, where the network is trained to minimize the difference between the predicted Q-value and the actual Q-value obtained from the observed reward. This process is known as the Bellman update.
+
+# DQNs have been successfully applied to a variety of tasks, including playing Atari games, controlling robots, and even protein folding. They are particularly useful in environments with high-dimensional state and action spaces, where traditional Q-learning methods become computationally infeasible.
+
+# Here is an example of Deep Q-Network implementation in Python using the PyTorch deep learning framework:
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import numpy as np
+
+class DQN(nn.Module):
+    def __init__(self, state_dim, action_dim):
+        super(DQN, self).__init__()
+        self.fc1 = nn.Linear(state_dim, 128)
+        self.fc2 = nn.Linear(128, 128)
+        self.fc3 = nn.Linear(128, action_dim)
+
+    def forward(self, x):
+        x = torch.relu(self.fc1(x))
+        x = torch.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
+
+class Agent:
+    def __init__(self, state_dim, action_dim, gamma=0.99, epsilon=1.0, epsilon_min=0.01, epsilon_decay=0.995):
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.gamma = gamma
+        self.epsilon = epsilon
+        self.epsilon_min = epsilon_min
+        self.epsilon_decay = epsilon_decay
+        self.action_dim = action_dim
+        self.model = DQN(state_dim, action_dim).to(self.device)
+        self.target_model = DQN(state_dim, action_dim).to(self.device)
+        self.target_model.load_state_dict(self.model.state_dict())
+        self.optimizer = optim.Adam(self.model.parameters())
+        self.loss_fn = nn.MSELoss()
+
+    def act(self, state):
+        if np.random.rand() < self.epsilon:
+            return np.random.randint(self.action_dim)
+        else:
+            state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
+            with torch.no_grad():
+                q_values = self.model(state)
+            return q_values.argmax().item()
+
+    def train(self, replay_buffer, batch_size):
+        if len(replay_buffer) < batch_size:
+            return
+        state, action, next_state, reward, done = replay_buffer.sample(batch_size)
+        state = torch.FloatTensor(state).to(self.device)
+        action = torch.LongTensor(action).unsqueeze(1).to(self.device)
+        next_state = torch.FloatTensor(next_state).to(self.device)
+        reward = torch.FloatTensor(reward).unsqueeze(1).to(self.device)
+        done = torch.FloatTensor(done).unsqueeze(1).to(self.device)
+
+        q_values = self.model(state).gather(1, action)
+        next_q_values = self.target_model(next_state).max(1)[0].unsqueeze(1)
+        expected_q_values = reward + (1 - done) * self.gamma * next_q_values
+        loss = self.loss_fn(q_values, expected_q_values.detach())
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+        if self.epsilon > self.epsilon_min:
+            self.epsilon *= self.epsilon_decay
+
+    def update_target(self):
+        self.target_model.load_state_dict(self.model.state_dict())
+
+# In this example, the DQN is defined as a neural network with 3 fully connected layers, and the Agent class implements the training and inference logic. The act method selects an action according to an epsilon-greedy policy, and the train method updates the Q-values using the Bellman equation and a batch of experience samples from a replay buffer. The update_target method periodically updates the weights of the target network to the same values as the primary network.

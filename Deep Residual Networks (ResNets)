@@ -1,0 +1,45 @@
+# Deep Residual Networks, also known as ResNets, are a type of deep neural network architecture that are designed to address the vanishing gradient problem that occurs in very deep neural networks.
+
+# The vanishing gradient problem occurs when the gradients (i.e., the rates of change of the loss function with respect to the parameters) become extremely small as they are backpropagated through many layers of the network. This can result in slow training, poor convergence, and difficulty in learning deep representations.
+
+# ResNets address this problem by using residual connections, which enable the network to learn residual mappings between layers. In other words, instead of trying to learn the mapping directly from the input to the output of a layer, ResNets learn the difference between the input and output of that layer, and then add that difference to the output. This approach makes it easier for the network to learn deep representations, because it allows the network to focus on learning the residuals, which are generally easier to learn than the full mapping.
+
+# The architecture of a ResNet typically consists of a series of residual blocks, each of which contains one or more convolutional layers and a shortcut connection that bypasses the convolutional layers. The output of each residual block is then added to the input of the block, and the resulting sum is passed through an activation function to produce the output of the block. By using residual connections in this way, ResNets are able to train much deeper networks than were previously possible, leading to state-of-the-art performance on a wide range of computer vision tasks.
+
+# Here's an example code sample in Python using the Keras library to implement a deep Residual Network:
+from keras.layers import Input, Conv2D, BatchNormalization, Activation, Add, Flatten, Dense
+from keras.models import Model
+
+def residual_block(input_tensor, filters, strides=(1, 1)):
+    x = Conv2D(filters, (3, 3), strides=strides, padding='same')(input_tensor)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    x = Conv2D(filters, (3, 3), padding='same')(x)
+    x = BatchNormalization()(x)
+    shortcut = input_tensor
+    if strides != (1, 1) or input_tensor.shape[-1] != filters:
+        shortcut = Conv2D(filters, (1, 1), strides=strides, padding='valid')(shortcut)
+        shortcut = BatchNormalization()(shortcut)
+    x = Add()([x, shortcut])
+    x = Activation('relu')(x)
+    return x
+
+def resnet(input_shape, num_classes):
+    input_tensor = Input(shape=input_shape)
+    x = Conv2D(64, (7, 7), strides=(2, 2), padding='same')(input_tensor)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    x = residual_block(x, 64)
+    x = residual_block(x, 64)
+    x = residual_block(x, 128, strides=(2, 2))
+    x = residual_block(x, 128)
+    x = residual_block(x, 256, strides=(2, 2))
+    x = residual_block(x, 256)
+    x = residual_block(x, 512, strides=(2, 2))
+    x = residual_block(x, 512)
+    x = Flatten()(x)
+    x = Dense(num_classes, activation='softmax')(x)
+    model = Model(inputs=input_tensor, outputs=x)
+    return model
+
+# This code defines a residual block function that contains two convolutional layers with batch normalization and activation functions, as well as a shortcut connection. The resnet function then uses these residual blocks to create a deep ResNet architecture with multiple layers, using a combination of 2D convolutional layers, batch normalization, activation functions, and pooling layers. The architecture ends with a dense layer with a softmax activation function to predict the output classes.

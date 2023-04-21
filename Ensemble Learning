@@ -1,0 +1,38 @@
+# Ensemble learning is a technique in deep learning where multiple models are trained and combined to improve the accuracy and generalization of the overall model. Instead of relying on a single model to make predictions, an ensemble model uses a combination of models to make more accurate predictions.
+
+# There are various ways to create an ensemble model, such as:
+# Bagging: This involves training multiple models with different subsets of the data and then combining their predictions using a voting or averaging mechanism.
+# Boosting: In this approach, multiple models are trained sequentially, with each model attempting to improve on the errors of the previous model.
+# Stacking: This involves training multiple models and then using their predictions as input to a higher-level model, which then makes the final prediction.
+
+# Ensemble learning has been shown to be effective in improving the accuracy and robustness of deep learning models, particularly in situations where the dataset is small or noisy, or where the individual models have different strengths and weaknesses.
+
+# Here's a code sample of ensemble learning using bagging in deep learning using Keras:
+import numpy as np
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.wrappers.scikit_learn import KerasClassifier
+from sklearn.ensemble import BaggingClassifier
+
+# Define the base model
+def create_model():
+    model = Sequential()
+    model.add(Dense(10, input_dim=8, activation='relu'))
+    model.add(Dense(1, activation='sigmoid'))
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    return model
+
+# Wrap the base model in the KerasClassifier for use with BaggingClassifier
+model = KerasClassifier(build_fn=create_model, epochs=10, batch_size=32)
+
+# Define the bagging classifier and fit the model
+bagging = BaggingClassifier(base_estimator=model, n_estimators=5)
+bagging.fit(X_train, y_train)
+
+# Evaluate the model on the test set
+score = bagging.score(X_test, y_test)
+print("Test accuracy:", score)
+
+# In this example, we first define a base model with a simple architecture consisting of a single hidden layer with 10 units and a single output unit with sigmoid activation. We then wrap this base model in a KerasClassifier object so that it can be used with the BaggingClassifier from scikit-learn.
+
+# We then define a bagging classifier with 5 estimators (i.e., 5 instances of the base model) and fit the model on the training set. Finally, we evaluate the bagging classifier on the test set and print out the accuracy score.

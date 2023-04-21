@@ -1,0 +1,52 @@
+# Federated learning is a distributed machine learning approach that allows multiple devices or nodes to collaboratively train a model without exchanging their data with a central server. Instead, the model is trained locally on each device using its own data, and only the model updates are sent back to a central server or coordinator, where they are aggregated to create a new global model. This process allows for privacy-preserving and decentralized machine learning, as the sensitive data never leaves the device, and the model updates are securely aggregated to create a more accurate and robust model. Federated learning has become increasingly popular in applications such as mobile and edge computing, where data privacy and network bandwidth are important concerns.
+
+# Here's a code sample for federated learning using the TensorFlow Federated (TFF) library in Python:
+import tensorflow as tf
+import tensorflow_federated as tff
+
+# Define the client-side model
+def create_client_model():
+    model = tf.keras.Sequential([
+        tf.keras.layers.Dense(10, activation='softmax', input_shape=(784,))
+    ])
+    model.compile(loss='categorical_crossentropy', optimizer=tf.keras.optimizers.SGD(learning_rate=0.02), metrics=['accuracy'])
+    return model
+
+# Define the server-side model
+def create_server_model():
+    model = tf.keras.Sequential([
+        tf.keras.layers.Dense(10, activation='softmax', input_shape=(784,))
+    ])
+    model.compile(loss='categorical_crossentropy', optimizer=tf.keras.optimizers.SGD(learning_rate=0.02), metrics=['accuracy'])
+    return model
+
+# Load the MNIST dataset
+emnist_train, emnist_test = tff.simulation.datasets.emnist.load_data()
+
+# Preprocess the dataset
+def preprocess(dataset):
+    def element_fn(element):
+        return (tf.reshape(element['pixels'], [-1]), tf.one_hot(element['label'], 10))
+    return dataset.repeat(10).map(element_fn).shuffle(500).batch(20)
+
+# Create the client and server datasets
+def make_federated_data(client_data, client_ids):
+    return [preprocess(client_data.create_tf_dataset_for_client(x)) for x in client_ids]
+
+client_ids = emnist_train.client_ids[:10]
+train_data = make_federated_data(emnist_train, client_ids)
+test_data = make_federated_data(emnist_test, client_ids)
+
+# Define the FederatedAveraging process
+iterative_process = tff.learning.build_federated_averaging_process(
+    create_client_model,
+    create_server_model
+)
+
+# Train the federated model
+state = iterative_process.initialize()
+for round_num in range(10):
+    state, metrics = iterative_process.next(state, train_data)
+    print('Round {:2d}, metrics={}'.format(round_num, metrics))
+
+# In this example, we first define the client-side and server-side models using TensorFlow. Then, we load and preprocess the EMNIST dataset using the TFF simulation API. We create the client and server datasets using the make_federated_data function, which creates preprocessed datasets for each client ID. Finally, we define the FederatedAveraging process using build_federated_averaging_process, initialize the state, and train the federated model using iterative_process.next.

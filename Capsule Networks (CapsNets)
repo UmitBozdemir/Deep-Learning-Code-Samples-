@@ -1,0 +1,93 @@
+# Capsule Networks (CapsNets) are a type of neural network architecture that were introduced by Geoffrey Hinton and his colleagues in 2017. CapsNets are designed to overcome some of the limitations of traditional Convolutional Neural Networks (CNNs) when it comes to image recognition tasks.
+
+# The key idea behind CapsNets is to represent the information in an image in the form of "capsules" rather than just feature maps. A capsule is a group of neurons that not only encode the presence of a particular feature, but also encode other attributes of that feature such as its orientation, position, and scale.
+
+# In CapsNets, the output of one layer of capsules is sent as input to the next layer of capsules, where they are combined and transformed to represent more complex features. This hierarchical structure allows CapsNets to learn features at different levels of abstraction, similar to how the visual system in humans processes information.
+
+# CapsNets also use a routing-by-agreement mechanism to determine which capsules in one layer should be coupled with which capsules in the next layer. This mechanism helps to ensure that the network learns to recognize objects based on their holistic properties rather than just their individual parts.
+
+# Overall, CapsNets have shown promising results in image recognition tasks, especially in situations where traditional CNNs struggle, such as with occlusion and viewpoint variations.
+
+# Here is a simple code example of Capsule Networks using the Keras API with TensorFlow backend:
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+
+class CapsuleLayer(layers.Layer):
+    def __init__(self, num_capsules, capsule_dim, num_routing=3, **kwargs):
+        super(CapsuleLayer, self).__init__(**kwargs)
+        self.num_capsules = num_capsules
+        self.capsule_dim = capsule_dim
+        self.num_routing = num_routing
+
+    def build(self, input_shape):
+        self.input_num_capsules = input_shape[1]
+        self.input_capsule_dim = input_shape[2]
+
+        # Initialize weight matrix for each pair of capsules in the input and output layers
+        self.W = self.add_weight(
+            shape=(self.input_num_capsules, self.num_capsules, self.input_capsule_dim, self.capsule_dim),
+            initializer='glorot_uniform',
+            trainable=True)
+
+    def call(self, inputs):
+        # Expand dimensions of input capsules and weight matrices
+        inputs = tf.expand_dims(inputs, axis=2)
+        inputs = tf.tile(inputs, [1, 1, self.num_capsules, 1, 1])
+        W = tf.tile(self.W, [1, self.input_num_capsules, 1, 1, 1])
+
+        # Compute predictions by multiplying input capsules with weight matrices
+        predictions = tf.matmul(W, inputs)
+
+        # Initialize routing logits with zeros
+        b = tf.zeros(shape=[tf.shape(inputs)[0], self.input_num_capsules, self.num_capsules, 1, 1], dtype=tf.float32)
+
+        # Dynamic routing algorithm
+        for i in range(self.num_routing):
+            # Convert routing logits to probabilities using softmax function
+            c = tf.nn.softmax(b, axis=2)
+
+            # Compute weighted sum of predictions for each output capsule
+            outputs = tf.reduce_sum(tf.multiply(c, predictions), axis=1, keepdims=True)
+
+            # Squash output capsules to ensure they have a length of 1
+            outputs = self.squash(outputs)
+
+            if i < self.num_routing - 1:
+                # Update routing logits based on agreement between predictions and outputs
+                b += tf.reduce_sum(tf.multiply(predictions, outputs), axis=-1, keepdims=True)
+
+        return tf.squeeze(outputs, axis=1)
+
+    def squash(self, inputs):
+        # Compute squared length of input capsules
+        squared_norm = tf.reduce_sum(tf.square(inputs), axis=-2, keepdims=True)
+
+        # Compute scaling factor for each capsule
+        scale = squared_norm / (1 + squared_norm) / tf.sqrt(squared_norm + 1e-8)
+
+        # Scale input capsules
+        outputs = scale * inputs
+
+        return outputs
+
+class CapsuleNetwork(keras.Model):
+    def __init__(self, **kwargs):
+        super(CapsuleNetwork, self).__init__(**kwargs)
+        self.conv1 = layers.Conv2D(filters=256, kernel_size=9, strides=1, padding='valid', activation='relu')
+        self.primary_caps = CapsuleLayer(num_capsules=32, capsule_dim=8, num_routing=3)
+        self.digit_caps = CapsuleLayer(num_capsules=10, capsule_dim=16, num_routing=3)
+
+    def call(self, inputs):
+        x = self.conv1(inputs)
+        x = self.primary_caps(x)
+        x = self.digit_caps(x)
+        return x
+
+# This code defines a simple Capsule Network with two layers - a primary capsule layer and a digit capsule layer. The primary capsule layer learns local features from the input image, while the digit capsule layer uses these features to recognize digits.
+
+# The CapsuleLayer class defines a custom layer that implements the routing-by-agreement mechanism for Capsule Networks. The build method initializes the weight matrices for each pair of capsules in the input and output layers, while the call method computes the predictions, routing logits, and output capsules using the dynamic routing algorithm. The squash method applies the non-linear squashing function to ensure that the length of each output capsule is between 0 and 1.
+
+# The CapsuleNetwork class defines the overall architecture of the Capsule Network using the Keras API. The conv1 layer applies a standard convolutional layer to the input image, while the primary_caps layer learns local features from the output of the conv1 layer. The digit_caps layer uses these features to recognize digits, with one capsule for each possible digit.
+
+# To train the Capsule Network, you would typically define a loss function and an optimizer and then call the compile and fit methods of the model object, as you would with any other Keras model.

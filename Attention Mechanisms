@@ -1,32 +1,40 @@
-# In machine learning, an attention mechanism is a technique used in neural networks that allows the network to selectively focus on certain parts of the input when making predictions.
+# Attention mechanisms in deep learning refer to a family of techniques that allow models to selectively focus on specific parts of input data, in order to improve their accuracy and efficiency in various tasks such as image recognition, language translation, and speech recognition.
 
-# The attention mechanism is based on the idea that different parts of the input may be more relevant to the prediction than others. By assigning different weights to different parts of the input, the attention mechanism allows the neural network to selectively focus on the most important information when making predictions.
+# In traditional neural network architectures, the input data is typically fed through a fixed set of layers, with each layer transforming the data in a fixed way. However, attention mechanisms introduce a degree of flexibility into this process by enabling the model to dynamically choose which parts of the input to focus on at each step of the computation.
 
-# Attention mechanisms are commonly used in natural language processing (NLP) tasks such as machine translation and text summarization, where the input is typically a sequence of words. By selectively attending to certain words in the input sequence, the attention mechanism can improve the accuracy of the model's predictions.
+# One common type of attention mechanism is called "soft attention," which assigns a weight to each element of the input based on how relevant it is to the task at hand. These weights are then used to compute a weighted sum of the input elements, which is used as the input to the next layer of the network.
 
-# Overall, attention mechanisms have proven to be a powerful tool for improving the performance of machine learning models, particularly in tasks involving sequential data.
+# Other types of attention mechanisms include "hard attention," which selects a subset of the input to focus on, and "self-attention," which allows a model to attend to different parts of its own internal representations in order to improve its performance on tasks such as language modeling and text generation.
 
-# Here's a code sample of how an attention mechanism can be implemented in PyTorch:
+# Overall, attention mechanisms are a powerful tool for improving the performance and interpretability of deep learning models in a wide range of applications.
+
+# Here's a code sample of implementing a basic attention mechanism in PyTorch:
 import torch
 import torch.nn as nn
 
 class Attention(nn.Module):
-    def __init__(self, input_size, hidden_size):
+    def __init__(self, hidden_size):
         super(Attention, self).__init__()
-        self.input_size = input_size
         self.hidden_size = hidden_size
-        self.attn = nn.Linear(self.input_size + self.hidden_size, 1)
+        self.attn = nn.Linear(self.hidden_size * 2, hidden_size)
+        self.v = nn.Parameter(torch.rand(hidden_size))
 
-    def forward(self, input, hidden_states):
-        seq_len = hidden_states.size(0)
-        hidden_with_input = torch.cat((input.expand(seq_len, -1, -1), hidden_states), dim=2)
-        energies = self.attn(hidden_with_input)
-        attn_weights = torch.softmax(energies.squeeze(), dim=0)
-        context_vector = torch.sum(attn_weights.unsqueeze(1) * hidden_states, dim=0)
-        return context_vector, attn_weights
+    def forward(self, hidden, encoder_outputs):
+        seq_len = len(encoder_outputs)
+        h = hidden.repeat(seq_len, 1, 1).transpose(0, 1)
+        encoder_outputs = encoder_outputs.transpose(0, 1)
+        attn_energies = self.score(h, encoder_outputs)
+        return nn.functional.softmax(attn_energies, dim=1).unsqueeze(1)
 
-# In this example, we define an Attention class that takes in an input_size and a hidden_size. The forward method takes in an input and a sequence of hidden states, and returns a context vector and attention weights.
+    def score(self, hidden, encoder_outputs):
+        energy = torch.tanh(self.attn(torch.cat([hidden, encoder_outputs], dim=2)))
+        energy = energy.transpose(1, 2)
+        v = self.v.repeat(encoder_outputs.size(0), 1).unsqueeze(1)
+        energy = torch.bmm(v, energy)
+        return energy.squeeze(1)
 
-# Inside the forward method, we first concatenate the input with the hidden states along the time step dimension. We then apply a linear layer to this concatenated tensor to compute the energies. We then apply a softmax activation to the energies to obtain the attention weights. Finally, we compute the context vector as a weighted sum of the hidden states, where the weights are given by the attention weights.
+# In this example, the Attention class takes in a hidden_size parameter, which specifies the size of the hidden state in the encoder and decoder networks. The forward method takes in a hidden tensor representing the current decoder state, and an encoder_outputs tensor representing the output of the encoder network for each input in the sequence.
 
-# This is just one example of how an attention mechanism can be implemented in PyTorch. The exact details will depend on the specific application and model architecture.
+# The attention mechanism computes a weighted sum of the encoder outputs based on their similarity to the current decoder state. This is done by first concatenating the decoder state and encoder outputs, passing the concatenated tensor through a linear layer, and applying a tanh activation function. The resulting tensor is then multiplied by a learnable parameter v, and the resulting energy scores are normalized using a softmax function.
+
+# The attention weights are then returned as a tensor with a shape of (batch_size, 1, seq_len), where batch_size is the size of the input batch and seq_len is the length of the input sequence. These weights can be used to compute a weighted sum of the encoder outputs, which can then be concatenated with the decoder state and passed through the decoder network to generate the next output in the sequence.

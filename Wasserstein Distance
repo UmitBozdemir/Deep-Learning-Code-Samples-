@@ -1,0 +1,96 @@
+# The Wasserstein distance, also known as the earth mover's distance (EMD), is a measure of distance between two probability distributions. It is commonly used in deep learning as a way to compare the distribution of generated samples to the distribution of real samples.
+
+# The Wasserstein distance between two probability distributions P and Q is defined as the minimum amount of work required to transform P into Q, where work is measured as the amount of probability mass that needs to be moved from one location to another. In other words, it measures the distance between the distributions based on the minimum amount of effort required to transform one distribution into the other.
+
+# In deep learning, the Wasserstein distance is often used in combination with a generative model, such as a generative adversarial network (GAN), to evaluate how well the model is able to generate realistic samples. The Wasserstein distance is used to compare the distribution of generated samples to the distribution of real samples, and the goal is to minimize this distance, which indicates that the generated samples are becoming more similar to the real samples.
+
+# Here's an example code sample in Python using PyTorch and the Wasserstein distance function from the PyTorch library.
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import DataLoader
+from torchvision.datasets import MNIST
+from torchvision.transforms import transforms
+from torch.autograd import grad
+
+# Define the generator and discriminator networks
+class Generator(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.fc1 = nn.Linear(100, 256)
+        self.fc2 = nn.Linear(256, 512)
+        self.fc3 = nn.Linear(512, 784)
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
+        x = torch.tanh(self.fc3(x))
+        return x
+
+class Discriminator(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.fc1 = nn.Linear(784, 512)
+        self.fc2 = nn.Linear(512, 256)
+        self.fc3 = nn.Linear(256, 1)
+
+    def forward(self, x):
+        x = torch.relu(self.fc1(x))
+        x = torch.relu(self.fc2(x))
+        x = torch.sigmoid(self.fc3(x))
+        return x
+
+# Define the Wasserstein distance loss function
+def wasserstein_loss(real, fake):
+    return torch.mean(real) - torch.mean(fake)
+
+# Set up the training data and the dataloader
+transform = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.5,), (0.5,))
+])
+
+train_data = MNIST(root='./data', train=True, transform=transform, download=True)
+train_loader = DataLoader(train_data, batch_size=64, shuffle=True)
+
+# Set up the generator and discriminator networks, and the optimizer
+generator = Generator()
+discriminator = Discriminator()
+g_optimizer = optim.Adam(generator.parameters(), lr=0.0002, betas=(0.5, 0.999))
+d_optimizer = optim.Adam(discriminator.parameters(), lr=0.0002, betas=(0.5, 0.999))
+
+# Train the generator and discriminator networks using Wasserstein distance
+for epoch in range(100):
+    for real_data, _ in train_loader:
+        batch_size = real_data.size(0)
+        
+        # Train the discriminator
+        discriminator.zero_grad()
+        real_data = real_data.view(batch_size, -1)
+        real_data = real_data.to(device)
+        real_pred = discriminator(real_data)
+        noise = torch.randn(batch_size, 100).to(device)
+        fake_data = generator(noise).detach()
+        fake_pred = discriminator(fake_data)
+        d_loss = wasserstein_loss(real_pred, fake_pred)
+        d_loss.backward()
+        d_optimizer.step()
+
+        # Train the generator
+        generator.zero_grad()
+        noise = torch.randn(batch_size, 100).to(device)
+        fake_data = generator(noise)
+        fake_pred = discriminator(fake_data)
+        g_loss = -torch.mean(fake_pred)
+        g_loss.backward()
+        g_optimizer.step()
+
+    # Print the losses for each epoch
+    print(f"Epoch {epoch+1}: Discriminator loss: {d_loss:.4f}, Generator loss: {g_loss:.4f}")
+
+# In this code sample, we define a generator and a discriminator network, and we train them using the Wasserstein distance loss function. We also set up the training data and the dataloader, and we use PyTorch's built-in functions to define the optimizer and train the networks. At each epoch, we print the discriminator and generator losses to monitor the training progress.
+
+# In the training loop, we first train the discriminator on a batch of real and fake data by computing the Wasserstein distance between the real and fake predictions. We then train the generator to minimize the Wasserstein distance between the generated data and the real data by computing the negative mean of the fake predictions. We use PyTorch's autograd functionality to compute the gradients and update the network parameters using the optimizer.
+
+# Note that in this code sample, we use the MNIST dataset and set the batch size to 64. We also use a learning rate of 0.0002 for the optimizer and train the networks for 100 epochs. The implementation can be customized according to the specific use case and dataset.

@@ -3,11 +3,8 @@
 # These models are based on neural networks and can learn to generate text or speech by analyzing large amounts of data and then using this knowledge to predict and generate new sequences of text or speech.
 
 # There are several types of generative models used for text and speech in deep learning, including:
-
 # Recurrent Neural Networks (RNNs): RNNs are a type of neural network that can process sequences of data and generate new sequences of data based on the patterns it learns from the training data.
-
 # Variational Autoencoders (VAEs): VAEs are a type of generative model that can generate new data samples by learning a probability distribution over the latent space of the input data.
-
 # Generative Adversarial Networks (GANs): GANs are a type of generative model that use two neural networks - a generator and a discriminator - to generate new data samples that are indistinguishable from real data.
 
 # Generative models for text and speech are used in a wide range of applications, including language translation, speech synthesis, and text summarization.

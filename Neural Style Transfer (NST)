@@ -1,0 +1,130 @@
+# Neural Style Transfer (NST) is a technique in Deep Learning that combines the style of one image with the content of another image to create a new image that retains the content of the original image but is rendered in the style of a different image. The technique uses a pre-trained Convolutional Neural Network (CNN) to extract the features that represent both the content and style of an image. These features are then combined in a way that preserves the content of the original image while matching the statistical properties of the style image. The resulting image is a new image that has the same content as the original image but has been stylized with the visual features of the style image. NST has been used for a variety of applications, including generating artistic images and stylizing video content.
+
+# Here's an example code using TensorFlow in Python for Neural Style Transfer:
+import tensorflow as tf
+import numpy as np
+import PIL.Image
+
+# Load the pre-trained VGG19 model
+vgg = tf.keras.applications.VGG19(include_top=False, weights='imagenet')
+
+# Define the content layer and the style layers
+content_layers = ['block5_conv2']
+style_layers = ['block1_conv1','block2_conv1','block3_conv1','block4_conv1','block5_conv1']
+
+# Create a function to extract the feature maps from the specified layers
+def get_feature_representations(model, content_path, style_path, num_content_layers, num_style_layers):
+    content_image = load_and_process_img(content_path)
+    style_image = load_and_process_img(style_path)
+    
+    # Create a list of feature representations for the content and style images
+    content_representations = []
+    style_representations = []
+    
+    # Get the feature maps from the specified layers for the content image
+    for layer in content_layers:
+        content_outputs = model(content_image)
+        layer_outputs = content_outputs[layer]
+        content_representations.append(layer_outputs)
+    
+    # Get the feature maps from the specified layers for the style image
+    for layer in style_layers:
+        style_outputs = model(style_image)
+        layer_outputs = style_outputs[layer]
+        style_representations.append(layer_outputs)
+        
+    return content_representations, style_representations
+
+# Define the content and style images and the output image
+content_path = 'content.jpg'
+style_path = 'style.jpg'
+output_path = 'output.jpg'
+
+# Define the hyperparameters for the neural style transfer
+alpha = 1e3
+beta = 1e-2
+num_iterations = 1000
+
+# Load and preprocess the images
+def load_and_process_img(path):
+    img = PIL.Image.open(path)
+    img = img.resize((512, 512))
+    img = tf.keras.preprocessing.image.img_to_array(img)
+    img = np.expand_dims(img, axis=0)
+    img = tf.keras.applications.vgg19.preprocess_input(img)
+    return img
+
+# Create a function to deprocess the output image
+def deprocess_img(img):
+    img = img.reshape((512, 512, 3))
+    img += [103.939, 116.779, 123.68]
+    img = img[:, :, ::-1]
+    img = np.clip(img, 0, 255).astype('uint8')
+    return img
+
+# Define the content loss function
+def content_loss(base_content, target):
+    return tf.reduce_mean(tf.square(base_content - target))
+
+# Define the style loss function
+def gram_matrix(input_tensor):
+    channels = int(input_tensor.shape[-1])
+    a = tf.reshape(input_tensor, [-1, channels])
+    n = tf.shape(a)[0]
+    gram = tf.matmul(a, a, transpose_a=True)
+    return gram / tf.cast(n, tf.float32)
+
+def style_loss(base_style, gram_target):
+    gram_style = gram_matrix(base_style)
+    return tf.reduce_mean(tf.square(gram_style - gram_target))
+
+# Define the training loop
+def training_loop(model, content_path, style_path, num_iterations, alpha, beta):
+    content_representations, style_representations = get_feature_representations(model, content_path, style_path, len(content_layers), len(style_layers))
+    gram_style = [gram_matrix(style_representation) for style_representation in style_representations]
+    
+    # Initialize the output image with the content image
+    init_image = load_and_process_img(content_path)
+    output_image = tf.Variable(init_image, dtype=tf) 
+
+# Define the optimizer and the loss function
+opt = tf.optimizers.Adam(learning_rate=5, beta_1=0.99, epsilon=1e-1)
+
+# Create a progress bar to track the training progress
+bar = tf.keras.utils.Progbar(num_iterations)
+
+# Train the model for the specified number of iterations
+for i in range(num_iterations):
+    with tf.GradientTape() as tape:
+        tape.watch(output_image)
+        output_representations = model(output_image)
+        
+        # Calculate the content loss
+        content_loss_value = 0
+        for j in range(len(content_layers)):
+            content_loss_value += content_loss(content_representations[j], output_representations[content_layers[j]])
+        
+        # Calculate the style loss
+        style_loss_value = 0
+        for j in range(len(style_layers)):
+            style_loss_value += style_loss(output_representations[style_layers[j]], gram_style[j])
+        
+        # Calculate the total loss
+        total_loss = alpha * content_loss_value + beta * style_loss_value
+        
+    # Calculate the gradients and update the output image
+    grads = tape.gradient(total_loss, output_image)
+    opt.apply_gradients([(grads, output_image)])
+    output_image.assign(tf.clip_by_value(output_image, 0, 255))
+    
+    # Update the progress bar
+    bar.update(i)
+    
+# Save the output image
+output_img = deprocess_img(output_image.numpy().squeeze())
+PIL.Image.fromarray(output_img).save(output_path)
+
+# Train the model and save the output image
+training_loop(vgg, content_path, style_path, num_iterations, alpha, beta)
+
+# Note that this is just a basic example, and there are many other techniques and optimizations that can be applied to improve the quality and speed of the Neural Style Transfer algorithm.

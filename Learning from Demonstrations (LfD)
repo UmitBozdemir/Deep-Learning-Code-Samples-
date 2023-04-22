@@ -1,0 +1,59 @@
+# Learning from Demonstrations (LfD) is a machine learning paradigm that enables agents to learn from examples provided by a human or an expert agent. In the context of Deep Learning, LfD is a type of Supervised Learning where the agent learns to imitate the behavior of an expert by observing a set of demonstrations or examples.
+
+# The agent is trained on a dataset of input-output pairs, where the input corresponds to the state of the environment, and the output corresponds to the action taken by the expert in that state. The goal of the agent is to learn a policy that maps the state of the environment to the appropriate action to be taken, without necessarily understanding the underlying dynamics of the environment.
+
+# LfD is particularly useful in situations where it is difficult or expensive to manually program a behavior or policy, or when the agent needs to learn from human expertise. LfD has many applications, such as autonomous driving, robotics, and video games, where it can be used to teach agents to perform complex tasks and behaviors.
+
+#  Here's an example code snippet in Python using Keras and OpenAI gym to demonstrate how to implement Learning from Demonstrations (LfD) in a Deep Learning model:
+import numpy as np
+import gym
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.optimizers import Adam
+
+# Create an OpenAI gym environment
+env = gym.make('CartPole-v0')
+
+# Collect a set of expert demonstrations
+expert_data = []
+for i in range(10):
+    state = env.reset()
+    done = False
+    while not done:
+        action = env.action_space.sample()  # Replace with expert's action
+        next_state, reward, done, _ = env.step(action)
+        expert_data.append((state, action))
+        state = next_state
+
+# Define the neural network architecture
+model = Sequential()
+model.add(Dense(32, input_dim=4, activation='relu'))
+model.add(Dense(16, activation='relu'))
+model.add(Dense(2, activation='softmax'))
+
+# Compile the model
+model.compile(loss='categorical_crossentropy', optimizer=Adam(lr=0.001), metrics=['accuracy'])
+
+# Convert the expert demonstrations to a format the model can use
+states = np.array([data[0] for data in expert_data])
+actions = np.array([data[1] for data in expert_data])
+actions = np.eye(2)[actions]
+
+# Train the model on the expert demonstrations
+model.fit(states, actions, epochs=10, batch_size=32, validation_split=0.2)
+
+# Evaluate the model's performance on the environment
+state = env.reset()
+done = False
+while not done:
+    action_probs = model.predict(np.array([state]))
+    action = np.argmax(action_probs)
+    next_state, reward, done, _ = env.step(action)
+    state = next_state
+    env.render()
+
+# In this example, we first create an environment using OpenAI's gym library. We then collect a set of expert demonstrations by running the environment with a random policy and recording the states and actions taken by the expert.
+
+# We define a neural network with a few dense layers, compile it using the Adam optimizer and categorical cross-entropy loss function. We then convert the expert demonstrations to a format that the model can use for training, where the input is the state of the environment, and the output is a one-hot encoding of the action taken by the expert.
+
+# Finally, we train the model on the expert demonstrations using Keras' fit method. Once training is complete, we evaluate the model's performance on the environment by running the environment with the model's predicted actions at each step.

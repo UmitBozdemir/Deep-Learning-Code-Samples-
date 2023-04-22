@@ -1,0 +1,54 @@
+# Recurrent Neural Attention Models (also known as Recurrent Attention Models) are a type of neural network architecture that incorporate the concept of attention mechanisms into recurrent neural networks (RNNs).
+
+# In traditional RNNs, information is passed through the network in a sequential manner, with the hidden state of each time step being dependent only on the previous time step's hidden state and the current input. However, in tasks that require the processing of sequential data, such as natural language processing, it can be useful to focus on certain parts of the input at each time step.
+
+# Attention mechanisms in recurrent neural networks allow the model to selectively focus on specific parts of the input at each time step, allowing for more effective processing of sequential data. The model learns to assign different levels of importance to different parts of the input, which can be especially useful in tasks such as machine translation where certain parts of the input may be more relevant to the output than others.
+
+# Overall, recurrent neural attention models provide a way to improve the performance of RNNs in tasks that involve sequential data by allowing the model to selectively focus on different parts of the input at each time step.
+
+# Here's a code sample of a Recurrent Neural Attention Model implemented using PyTorch:
+import torch
+import torch.nn as nn
+
+class Attention(nn.Module):
+    def __init__(self, hidden_size):
+        super(Attention, self).__init__()
+        self.hidden_size = hidden_size
+        self.attn = nn.Linear(self.hidden_size*2, self.hidden_size)
+        self.v = nn.Linear(self.hidden_size, 1, bias=False)
+        
+    def forward(self, hidden, encoder_outputs):
+        seq_len = len(encoder_outputs)
+        hidden = hidden.repeat(seq_len, 1, 1)
+        attn_weights = torch.tanh(self.attn(torch.cat((hidden, encoder_outputs), dim=2)))
+        attn_weights = self.v(attn_weights).squeeze()
+        attn_weights = torch.softmax(attn_weights, dim=0)
+        context_vector = torch.sum(attn_weights.unsqueeze(1) * encoder_outputs, dim=0)
+        return context_vector, attn_weights
+
+class RNNAttention(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size):
+        super(RNNAttention, self).__init__()
+        self.hidden_size = hidden_size
+        self.embedding = nn.Embedding(input_size, hidden_size)
+        self.gru = nn.GRU(hidden_size, hidden_size)
+        self.attention = Attention(hidden_size)
+        self.out = nn.Linear(hidden_size, output_size)
+        
+    def forward(self, input, hidden, encoder_outputs):
+        embedded = self.embedding(input).view(1, 1, -1)
+        output, hidden = self.gru(embedded, hidden)
+        context_vector, attn_weights = self.attention(output, encoder_outputs)
+        output = self.out(context_vector)
+        return output, hidden, attn_weights
+        
+    def init_hidden(self):
+        return torch.zeros(1, 1, self.hidden_size)
+
+# In this code sample, the Attention module is defined, which takes as input the hidden state of the RNN at a particular time step and the entire sequence of encoder outputs, and produces a context vector and attention weights.
+
+# The RNNAttention module is then defined, which incorporates the Attention module into an RNN. The forward function takes as input an input tensor, a hidden state tensor, and the entire sequence of encoder outputs, and produces an output tensor, a new hidden state tensor, and attention weights.
+
+# The init_hidden function initializes the hidden state of the RNN.
+
+# This code sample is just a basic example and can be modified and extended to suit specific use cases.

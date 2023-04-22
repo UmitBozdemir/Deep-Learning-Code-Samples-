@@ -1,0 +1,56 @@
+# Self-attention mechanisms are a type of attention mechanism used in deep learning models, particularly in natural language processing (NLP) and computer vision tasks. Self-attention mechanisms allow a model to attend to different parts of its own input, taking into account the relationships between different elements of the input sequence.
+
+# In NLP tasks, self-attention mechanisms are often used in transformer models, which have achieved state-of-the-art results in many NLP tasks such as language translation and text classification. In these models, self-attention allows the model to attend to different words in the input sentence, giving more weight to words that are most relevant to the task at hand.
+
+# Self-attention mechanisms can also be used in computer vision tasks, such as image classification and object detection. In these tasks, self-attention can be used to allow the model to attend to different parts of the image, taking into account the relationships between different objects and features.
+
+# Overall, self-attention mechanisms allow models to better understand and process complex inputs, by attending to different parts of the input and capturing important relationships and dependencies between them.
+
+# Here is a code sample of self-attention mechanisms implemented using the PyTorch deep learning library:
+import torch
+import torch.nn as nn
+
+class SelfAttention(nn.Module):
+    def __init__(self, embed_size, heads):
+        super(SelfAttention, self).__init__()
+        self.embed_size = embed_size
+        self.heads = heads
+        self.head_dim = embed_size // heads
+
+        assert (self.head_dim * heads == embed_size), "Embed size needs to be divisible by heads"
+
+        self.values = nn.Linear(self.head_dim, self.head_dim, bias=False)
+        self.keys = nn.Linear(self.head_dim, self.head_dim, bias=False)
+        self.queries = nn.Linear(self.head_dim, self.head_dim, bias=False)
+        self.fc_out = nn.Linear(heads * self.head_dim, embed_size)
+
+    def forward(self, values, keys, query, mask):
+        N = query.shape[0] # Number of examples in batch
+        value_len, key_len, query_len = values.shape[1], keys.shape[1], query.shape[1]
+
+        # Split embedding into self.heads pieces
+        values = values.reshape(N, value_len, self.heads, self.head_dim)
+        keys = keys.reshape(N, key_len, self.heads, self.head_dim)
+        query = query.reshape(N, query_len, self.heads, self.head_dim)
+
+        # Compute energy between query and keys for each head
+        energy = torch.einsum("nqhd,nkhd->nhqk", [query, keys])
+
+        # Apply mask to energy (optional)
+        if mask is not None:
+            energy = energy.masked_fill(mask == 0, float("-1e20"))
+
+        # Apply softmax to get attention weights
+        attention = torch.softmax(energy / (self.embed_size ** (1/2)), dim=3)
+
+        # Compute output for each head
+        out = torch.einsum("nhql,nlhd->nqhd", [attention, values]).reshape(
+            N, query_len, self.heads * self.head_dim
+        )
+
+        # Apply final linear layer
+        out = self.fc_out(out)
+
+        return out
+
+# This code defines a SelfAttention module which takes as input values, keys, and query tensors, and applies self-attention to compute an output tensor. The module uses linear layers to project the input tensors into a lower-dimensional space, splits the resulting embeddings into multiple heads, computes attention weights between the query and keys for each head, and combines the values based on the attention weights to compute the final output tensor. The module also optionally applies a mask to the attention weights to allow for masked self-attention.

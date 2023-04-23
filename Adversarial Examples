@@ -1,0 +1,56 @@
+# Adversarial examples are inputs (such as images, audio, or text) that are intentionally designed to deceive machine learning models, particularly deep learning models. These inputs are created by adding small and imperceptible perturbations to the original input, which can cause the model to misclassify the input with high confidence.
+
+# For example, a deep learning model that is trained to recognize images of cats may misclassify an adversarial image that is almost identical to a cat image, but with small perturbations added to it that are imperceptible to the human eye. Adversarial examples can be used to test the robustness and security of deep learning models and to better understand the vulnerabilities of these models. They can also be used maliciously, for example, to fool self-driving cars or facial recognition systems.
+
+# Here's an example of generating adversarial examples for an image classification task using the Fast Gradient Sign Method (FGSM) in TensorFlow:
+import tensorflow as tf
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Load a pre-trained model
+model = tf.keras.applications.InceptionV3()
+
+# Load an image to be classified
+image_path = 'cat.jpg'
+image = tf.keras.preprocessing.image.load_img(image_path, target_size=(299, 299))
+image_array = tf.keras.preprocessing.image.img_to_array(image)
+image_array = np.expand_dims(image_array, axis=0)
+image_array = tf.keras.applications.inception_v3.preprocess_input(image_array)
+
+# Define the epsilon value for FGSM
+epsilon = 0.01
+
+# Define the loss function and compute the gradient
+loss_object = tf.keras.losses.CategoricalCrossentropy()
+with tf.GradientTape() as tape:
+    tape.watch(image_array)
+    predictions = model(image_array)
+    loss = loss_object(tf.one_hot([np.argmax(predictions)], predictions.shape[-1]), predictions)
+
+# Compute the perturbation using FGSM
+gradient = tape.gradient(loss, image_array)
+signed_grad = tf.sign(gradient)
+perturbation = epsilon * signed_grad
+
+# Generate the adversarial example by adding the perturbation to the original image
+adversarial_image_array = image_array + perturbation
+adversarial_image_array = tf.clip_by_value(adversarial_image_array, 0, 1)
+
+# Classify the adversarial example and plot the results
+adversarial_predictions = model(adversarial_image_array)
+adversarial_class = np.argmax(adversarial_predictions)
+adversarial_prob = tf.nn.softmax(adversarial_predictions)[0][adversarial_class]
+print('Adversarial class:', adversarial_class, 'with probability:', adversarial_prob)
+
+plt.figure(figsize=(8, 8))
+plt.subplot(1, 2, 1)
+plt.imshow(image)
+plt.title('Original Image')
+plt.axis('off')
+plt.subplot(1, 2, 2)
+plt.imshow(tf.keras.preprocessing.image.array_to_img(adversarial_image_array[0]))
+plt.title('Adversarial Image')
+plt.axis('off')
+plt.show()
+
+# This code loads a pre-trained InceptionV3 model, loads an image of a cat to be classified, computes an adversarial example using FGSM with an epsilon value of 0.01, and then classifies and plots the original and adversarial images. The FGSM function computes the perturbation using the gradient of the loss with respect to the input image, and then applies the perturbation to the image to generate the adversarial example. The clip_by_value function is used to ensure that the adversarial example remains within the valid range of pixel values.

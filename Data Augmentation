@@ -1,0 +1,29 @@
+# Data augmentation in deep learning refers to the process of creating new training data from existing data by applying various transformations such as rotation, translation, scaling, flipping, cropping, adding noise, etc. The goal of data augmentation is to increase the diversity and quantity of training data, which can help improve the accuracy and generalization of deep learning models.
+
+# Data augmentation is particularly useful when the available training data is limited or when the model is prone to overfitting. By generating more diverse training examples, the model can learn to better generalize to new, unseen data. Data augmentation is a common technique used in many computer vision and natural language processing applications.
+
+# Here's a sample code in Python using the Keras library for data augmentation in deep learning:
+from keras.preprocessing.image import ImageDataGenerator
+
+# Create an instance of the ImageDataGenerator class
+datagen = ImageDataGenerator(
+    rotation_range=10,   # randomly rotate images by 10 degrees
+    width_shift_range=0.1,   # randomly shift images horizontally by 10%
+    height_shift_range=0.1,   # randomly shift images vertically by 10%
+    shear_range=0.2,    # randomly apply shearing transformation
+    zoom_range=0.2,     # randomly zoom in and out on images
+    horizontal_flip=True,    # randomly flip images horizontally
+    vertical_flip=False,   # don't flip images vertically
+    fill_mode='nearest'   # fill any gaps created by transformations with nearest pixel values
+)
+
+# Load the training dataset
+train_data = ...
+
+# Create a batch generator using the ImageDataGenerator instance
+batch_generator = datagen.flow(train_data, batch_size=32)
+
+# Train the model using the batch generator
+model.fit(batch_generator, steps_per_epoch=len(train_data)//32, epochs=50)
+
+# In this example, we use the ImageDataGenerator class from Keras to define various image transformations such as rotation, shifting, shearing, zooming, and flipping. We then create a batch generator using the flow method of the ImageDataGenerator instance, and use it to train the deep learning model. The steps_per_epoch parameter specifies the number of batches to be generated in each epoch.

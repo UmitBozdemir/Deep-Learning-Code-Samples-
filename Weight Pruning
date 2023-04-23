@@ -1,0 +1,85 @@
+# Weight pruning is a technique in deep learning that involves identifying and removing the connections (weights) between neurons that have little impact on the network's output. The goal of weight pruning is to reduce the size of the neural network and improve its efficiency, without significantly sacrificing its performance.
+
+# During weight pruning, the weights with the smallest absolute values are removed, which results in some of the neurons becoming disconnected from the network. The remaining neurons in the network are then reconnected to form a new, smaller network.
+
+# Weight pruning can be done in several ways, such as iteratively pruning the smallest weights until a desired level of sparsity is reached, or using a threshold value to remove weights below a certain magnitude.
+
+# The benefits of weight pruning include reducing the size of the model, making it easier to store and deploy, reducing computational requirements during training and inference, and potentially improving the model's generalization performance by reducing overfitting.
+
+# Here is an example code snippet of how weight pruning can be implemented in TensorFlow:
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.utils import plot_model
+from tensorflow.keras.datasets import mnist
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.layers.experimental import preprocessing
+from tensorflow.keras import regularizers
+
+# Load the MNIST dataset
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+
+# Normalize pixel values
+x_train = x_train.astype('float32') / 255
+x_test = x_test.astype('float32') / 255
+
+# Define the model architecture
+model = Sequential([
+    preprocessing.Flatten(input_shape=(28, 28)),
+    Dense(128, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+    Dense(64, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+    Dense(10, activation='softmax')
+])
+
+# Compile the model
+model.compile(loss='sparse_categorical_crossentropy',
+              optimizer='adam',
+              metrics=['accuracy'])
+
+# Train the model
+history = model.fit(x_train, y_train,
+                    batch_size=64,
+                    epochs=10,
+                    validation_split=0.2,
+                    callbacks=[EarlyStopping(patience=3)])
+
+# Prune the weights
+model = tf.keras.models.clone_model(model)
+model.set_weights(model.get_weights())
+
+model.summary()
+
+# Prune the weights
+pruning_params = {
+      'pruning_schedule': tfmot.sparsity.keras.ConstantSparsity(0.5, begin_step=0, end_step=200, frequency=100)
+}
+
+pruned_model = tfmot.sparsity.keras.prune_low_magnitude(model, **pruning_params)
+
+pruned_model.summary()
+
+# Retrain the pruned model
+pruned_model.compile(loss='sparse_categorical_crossentropy',
+                     optimizer='adam',
+                     metrics=['accuracy'])
+
+pruned_history = pruned_model.fit(x_train, y_train,
+                                  batch_size=64,
+                                  epochs=10,
+                                  validation_split=0.2,
+                                  callbacks=[EarlyStopping(patience=3)])
+
+# Evaluate the pruned model
+pruned_model.evaluate(x_test, y_test)
+
+# Compare the performance of the original and pruned models
+_, orig_accuracy = model.evaluate(x_test, y_test)
+_, pruned_accuracy = pruned_model.evaluate(x_test, y_test)
+print('Original accuracy:', orig_accuracy)
+print('Pruned accuracy:', pruned_accuracy)
+
+# In this example, we first define a simple neural network architecture for classifying MNIST digits. We then train the model using the training data and evaluate its performance on the test data.
+
+# After training, we use the TensorFlow Model Optimization (TF-MOT) library to prune the model's weights, setting a sparsity level of 50% and a pruning schedule that gradually increases the sparsity over the course of 200 steps.
+
+# We then retrain the pruned model and evaluate its performance on the test data, comparing it to the original model's accuracy. The final output will show us the comparison of original accuracy and pruned accuracy.

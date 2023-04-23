@@ -1,0 +1,47 @@
+# Factorized networks are a type of neural network architecture that utilizes factorization techniques to reduce the computational complexity of deep learning models. Factorization is the process of decomposing a matrix into smaller matrices, which can be used to simplify calculations and reduce the number of parameters required to represent a model.
+
+# In factorized networks, the weights of the model are factorized into smaller matrices or tensors. This allows the model to be represented more efficiently, with fewer parameters, while still achieving high accuracy on tasks such as image recognition and natural language processing.
+
+# One popular type of factorized network is the factorized convolutional neural network (F-CNN), which uses separable convolutions to decompose the convolutional filters into depthwise and pointwise convolutions. Another type is the low-rank factorization network, which decomposes the weight matrices into low-rank matrices using singular value decomposition (SVD).
+
+# Overall, factorized networks offer a way to reduce the computational cost and memory requirements of deep learning models while maintaining high performance, making them useful for applications where resource constraints are a concern.
+
+# Here's an example code snippet for a factorized convolutional neural network (F-CNN) using PyTorch:
+import torch
+import torch.nn as nn
+
+class FactorizedConv(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0):
+        super(FactorizedConv, self).__init__()
+        self.depthwise_conv = nn.Conv2d(in_channels, in_channels, kernel_size, stride=stride, padding=padding, groups=in_channels)
+        self.pointwise_conv = nn.Conv2d(in_channels, out_channels, 1)
+
+    def forward(self, x):
+        x = self.depthwise_conv(x)
+        x = self.pointwise_conv(x)
+        return x
+
+class FactorizedNet(nn.Module):
+    def __init__(self):
+        super(FactorizedNet, self).__init__()
+        self.conv1 = FactorizedConv(3, 32, kernel_size=3, padding=1)
+        self.conv2 = FactorizedConv(32, 64, kernel_size=3, padding=1)
+        self.fc1 = nn.Linear(64 * 8 * 8, 128)
+        self.fc2 = nn.Linear(128, 10)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = nn.functional.relu(x)
+        x = nn.functional.max_pool2d(x, 2)
+        x = self.conv2(x)
+        x = nn.functional.relu(x)
+        x = nn.functional.max_pool2d(x, 2)
+        x = x.view(-1, 64 * 8 * 8)
+        x = self.fc1(x)
+        x = nn.functional.relu(x)
+        x = self.fc2(x)
+        return x
+
+model = FactorizedNet()
+
+# In this example, the FactorizedConv module defines a factorized convolution layer using depthwise and pointwise convolutions. The FactorizedNet module uses two of these layers along with two fully connected layers to define a complete neural network.

@@ -1,0 +1,53 @@
+# Neural Networks are a type of Deep Learning algorithm that can be used for Time Series Forecasting. A time series is a sequence of data points collected at regular intervals over time, and Time Series Forecasting is the process of predicting future values based on historical data.
+
+# In the context of Neural Networks, Time Series Forecasting involves training a model on a historical time series dataset and then using that model to make predictions about future values. Neural Networks use multiple layers of interconnected nodes, or neurons, to learn complex patterns and relationships within the data.
+
+# For Time Series Forecasting, a common type of Neural Network is the Recurrent Neural Network (RNN), which has the ability to retain information about previous inputs in its hidden state. This makes RNNs well-suited for modeling sequential data, such as time series.
+
+# Another type of Neural Network used for Time Series Forecasting is the Convolutional Neural Network (CNN), which can be used to extract features from time series data by applying filters to the input data.
+
+# Overall, Neural Networks can be a powerful tool for Time Series Forecasting, but their effectiveness depends on the quality of the data, the choice of architecture and hyperparameters, and the appropriate use of regularization techniques to avoid overfitting.
+
+# Here's an example code for building a simple Recurrent Neural Network (RNN) in Python using Keras library for Time Series Forecasting:
+import numpy as np
+from keras.models import Sequential
+from keras.layers import Dense, LSTM
+
+# Define time series data
+data = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+# Define window size for training
+window_size = 3
+
+# Split data into input/output pairs
+X = []
+y = []
+for i in range(len(data)-window_size):
+    X.append(data[i:i+window_size])
+    y.append(data[i+window_size])
+X = np.array(X)
+y = np.array(y)
+
+# Reshape input data for RNN
+X = np.reshape(X, (X.shape[0], X.shape[1], 1))
+
+# Build RNN model
+model = Sequential()
+model.add(LSTM(50, input_shape=(window_size, 1)))
+model.add(Dense(1))
+model.compile(loss='mean_squared_error', optimizer='adam')
+
+# Train model
+model.fit(X, y, epochs=100, batch_size=1, verbose=2)
+
+# Use model for prediction
+input_data = np.array([8,9, 10, 11, 12]) # Define new input data
+input_data = np.reshape(input_data, (1, window_size, 1)) # Reshape input data for RNN
+predicted_value = model.predict(input_data) # Make prediction
+print(predicted_value) # Print predicted value
+
+# In this example, we first define a simple time series dataset consisting of 10 values. We then define a window size of 3, which is the number of past values that the RNN will use to make a prediction. We split the dataset into input/output pairs of length 3 and 1, respectively.
+
+# Next, we build the RNN model using Keras. We use an LSTM layer with 50 units and a dense output layer with 1 unit. We compile the model using mean squared error loss and the Adam optimizer.
+
+# We then train the model on the input/output pairs for 100 epochs with a batch size of 1. Finally, we use the trained model to make a prediction on a new input sequence of length 5, consisting of the last 3 values from the original dataset plus 2 additional values. We reshape the input data to match the required input shape for the RNN, and then use the `predict()` method to make a prediction. The predicted value is then printed to the console.
